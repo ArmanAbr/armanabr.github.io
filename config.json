@@ -1,0 +1,28 @@
+{
+  "site_name": "Arman Abrahamyan",
+  "site_short": "armcyb",
+  "tagline": "Cybersecurity student · Penetration testing · CTF player",
+  "description": "Security writeups, research notes and cheatsheets by Arman Abrahamyan.",
+  "url": "https://armanabr.github.io",
+  "author": "Arman Abrahamyan",
+  "email": "armanabrahamyan8080@gmail.com",
+  "location": "",
+  "hero_intro": "I break things on purpose, then write down exactly how - so the next person doesn't have to guess.",
+  "hero_blurb": "Cybersecurity student focused on offensive security: Active Directory attack paths, web exploitation and privilege escalation. This site is my public notebook - HackTheBox writeups, research posts and the cheatsheets I actually use.",
+  "social": {
+    "github": "https://github.com/ArmanAbr",
+    "hackthebox": "https://app.hackthebox.com/users/1934320",
+    "tryhackme": "tryhackme.com/p/armcyb",
+    "twitter": "https://x.com/aarmcyb"
+  },
+  "nav": [
+    { "label": "Writeups", "url": "writeups/" },
+    { "label": "Blog", "url": "blog/" },
+    { "label": "Cheatsheets", "url": "cheatsheets/" },
+    { "label": "Tags", "url": "tags/" },
+    { "label": "Resume", "url": "resume/" }
+  ],
+  "footer_note": "Built from scratch. No trackers, no cookies, no JavaScript frameworks.",
+  "home_writeup_count": 5,
+  "home_post_count": 4
+}

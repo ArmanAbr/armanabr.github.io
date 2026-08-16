@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<meta name="author" content="{{site_name}}">
+<meta name="color-scheme" content="dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:site_name" content="{{site_name}}">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="{{root}}static/css/style.css">
+<link rel="stylesheet" href="{{root}}static/css/syntax.css">
+<link rel="icon" href="{{root}}static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="{{body_class}}">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="{{home}}">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">{{site_short}}</span><span class="brand-cursor" aria-hidden="true"></span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="site-nav" id="site-nav">{{nav}}</nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+{{content}}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <p class="footer-name">{{site_name}}</p>
+      <p class="footer-note">{{footer_note}}</p>
+    </div>
+    <nav class="footer-social">{{social}}</nav>
+    <p class="footer-legal">&copy; {{year}} {{site_name}}. All content is my own unless credited.</p>
+  </div>
+</footer>
+
+<script src="{{root}}static/js/site.js" defer></script>
+</body>
+</html>
