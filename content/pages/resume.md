@@ -36,13 +36,23 @@ NetExec/CrackMapExec · Hashcat · Wireshark · Ffuf/Gobuster
 
 ## Projects
 
-### Home Active Directory Lab
-*Personal project*
+### [Sentinel](https://github.com/ArmanAbr/Sentinel)
 
-- Built an isolated multi-machine Windows domain to practise and *understand*
-  Active Directory attacks rather than just run tools.
-- Reproduced Kerberoasting, AS-REP roasting and ACL-based DCSync end to end,
-  then studied the corresponding Windows event logs from the defender's side.
+- Built a dual-brain privesc engine: a deterministic, offline GTFOBins/HackTricks rule engine that ranks ready-to-run escalation vectors (SUID, sudo, capabilities, dangerous groups, writable system files), with an optional Claude LLM layer that re-prioritizes and combines findings.
+- Includes autopwn, an authorization-gated engagement orchestrator that chains real Kali tools (nmap, feroxbuster, nikto, enum4linux-ng, searchsploit) into a prioritized foothold report.
+- Safety-first design: read-only by default, execution guarded behind explicit authorization flags, graceful degradation with no API key, and 18 offline tests.
+
+### [AD-Path-Finder](https://github.com/ArmanAbr/AD-Path-Finder) 
+
+- Rebuilt the core of BloodHound to understand how AD rights become attack edges: maps access masks and extended-right GUIDs (GenericAll, WriteDacl, ForceChangePassword, DCSync) into a weighted directed graph.
+- Runs Dijkstra shortest-path search from any user to Domain Admin, favoring the fewest abuse steps, and flags quick wins (Kerberoastable, AS-REP roastable, unconstrained delegation, DCSync).
+- Clean collector/analyzer split (live LDAP collection via ldap3/impacket → offline analysis), with Graphviz path export and 18 offline tests.
+
+### [SSTI-Exploiter](https://github.com/ArmanAbr/SSTI-Exploiter)
+
+- Built a from-scratch, tplmap-style scanner that distinguishes template evaluation from mere reflection using randomized operands across six delimiter families, eliminating the false positives naïve 7*7 checks produce.
+- Fingerprints 11 template engines (Jinja2, Twig, Freemarker, ERB, EJS, etc.) via differential probes, then builds engine-specific RCE payloads with correct quoting, output carving, and a time-based fallback for blind targets.
+- Ships with a deliberately vulnerable Flask lab and unit tests to demonstrate the full detect → fingerprint → exploit chain safely on localhost.
 
 ### Security writeups & notes *(this site)*
 *Ongoing*
@@ -56,21 +66,30 @@ NetExec/CrackMapExec · Hashcat · Wireshark · Ffuf/Gobuster
 *June 2024 – August 2025*
 
 Spent more then a year learning offensive security through practical labs and real-world tooling:
+
 - *Network Security: Traffic analysis with Wireshark and tcpdump; network enumeration and attack simulation with Nmap and Metasploit.*
+
 - *Web Application Security: Completed PortSwigger Academy labs; manually exploited SQL Injection, XSS, LFI, RFI, CSRF, and IDOR using Burp Suite.*
+  
 - *Active Directory: Practiced LDAP enumeration, BloodHound analysis, and Windows privilege escalation including token impersonation and ACL abuse.*
+  
 - *Scripting & Automation: Built enumeration and exploitation scripts in Python, Bash, and PowerShell to automate repetitive tasks, parse data, and streamline penetration testing workflows.*
+  
 - *Penetration Testing: Rooted multiple HackTheBox and TryHackMe machines, documenting full attack chains.*
 
 ### Junior Software Engineer — DST
 *June 2022 – July 2023*
-Built internal business tools and worked with databases:
-- *Developed internal business tools in VB.NET, streamlining operational workflows.*
-- *Designed relational database schemas and authored complex SQL queries for reporting and analytics.*
-- *Participated in agile ceremonies, peer code reviews, and sprint planning.*
 
+Built internal business tools and worked with databases:
+
+- *Developed internal business tools in VB.NET, streamlining operational workflows.*
+  
+- *Designed relational database schemas and authored complex SQL queries for reporting and analytics.*
+  
+- *Participated in agile ceremonies, peer code reviews, and sprint planning.*
+  
 ## Contact
 
 - **Email** - [armanabrahamyan8080@gmail.com](mailto:armanabrahamyan8080@gmail.com)
-- **GitHub** - 
-- **HackTheBox** - 
+- **GitHub** - https://github.com/ArmanAbr
+- **Twitter** - https://x.com/aarmcyb
