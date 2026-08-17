@@ -91,5 +91,5 @@ Built internal business tools and worked with databases:
 ## Contact
 
 - **Email** - [armanabrahamyan8080@gmail.com](mailto:armanabrahamyan8080@gmail.com)
-- **GitHub** - https://github.com/ArmanAbr
-- **Twitter** - https://x.com/aarmcyb
+- **GitHub** - [https://github.com/ArmanAbr]
+- **Twitter** - [https://x.com/aarmcyb]
