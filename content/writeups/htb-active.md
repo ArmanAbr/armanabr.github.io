@@ -8,7 +8,7 @@ os: Windows
 difficulty: Easy
 points: 450
 tags: [hackthebox, windows, easy, retired, active-directory, smbclient, hashcat, smbmap, gpp-decrypt, kerberoast, getuserspns]
-description: ctive is a Windows Active Directory machine where initial access is gained by extracting a GPP-encrypted password from an anonymously readable SMB share.
+description: Active is a Windows Active Directory machine where initial access is gained by extracting a GPP-encrypted password from an anonymously readable SMB share.
 featured: true
 ---
 
