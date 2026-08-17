@@ -12,20 +12,6 @@ description: FreePBX 16 was exploited through CVE-2025-57819 to gain remote code
 featured: true
 ---
 
-
----
-layout: htb
-title: "Connected"
-subtitle: "HackTheBox Writeup"
-date: 2026-07-29
-machine_image: /assets/images/htb-connected.png
-os: Linux
-difficulty: Easy
-xp: 585
-release_date: "21 May, 2026"
-tags: ["hackthebox", "linux", "easy", "active", "reverse-shell", "sql-injection", "freepbx"]
----
-
 # Reconnaissance
 ## Staged Nmap Scanning
 ```bash
