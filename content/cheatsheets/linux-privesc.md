@@ -1,7 +1,7 @@
 ---
 title: Linux Privilege Escalation Cheatsheet
 slug: linux-privesc
-date: 2026-08-16
+date: 2026-08-14
 updated: 2026-08-19
 tags: [linux, privilege-escalation, enumeration, scanning, recon]
 description: Common techniques and commands for escalating privileges on Linux systems
