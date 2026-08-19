@@ -1,7 +1,7 @@
 ---
 title: Linux Enumeration Cheatsheet
 slug: linux-enum
-date: 2026-08-16
+date: 2026-08-13
 updated: 2026-08-19
 tags: [linux, enumeration, scanning, recon]
 description: A comprehensive guide for enumerating Linux systems during CTFs and penetration testing.
