@@ -1,16 +1,17 @@
 ---
-layout: page
-title: "Windows Enumeration Cheatsheet"
-description:  "A comprehensive guide for enumerating Windows systems during CTFs and penetration testing."
-icon: "windows"
-permalink: /cheatsheets/windows-enum/
+title: Windows Enumeration Cheatsheet
+slug: windows-enum
+date: 2026-08-16
+updated: 2026-08-19
+tags: [windows, active-directory, privilege-escalation, enumeration, scanning, recon]
+description: A comprehensive guide for enumerating Windows systems during CTFs and penetration testing.
 ---
 
 # Windows Enumeration Cheatsheet
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 1. [System Information](#system-information)
 2. [Users & Groups](#users--groups)
 3. [Network](#network)
