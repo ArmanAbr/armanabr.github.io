@@ -1,9 +1,10 @@
 ---
-layout: page
-title: "Linux Privilege Escalation"
-description: "Common techniques and commands for escalating privileges on Linux systems"
-icon: "linux-priv"
-permalink: /cheatsheets/linux-privesc/
+title: Linux Privilege Escalation Cheatsheet
+slug: linux-privesc
+date: 2026-08-16
+updated: 2026-08-19
+tags: [linux, privilege-escalation, enumeration, scanning, recon]
+description: Common techniques and commands for escalating privileges on Linux systems
 ---
 
 ## Manual Enumeration
