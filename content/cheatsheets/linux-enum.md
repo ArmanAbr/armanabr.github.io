@@ -1,16 +1,17 @@
 ---
-layout: page
-title: "Linux Enumeration Cheatsheet"
-description: "A comprehensive guide for enumerating Linux systems during CTFs and penetration testing."
-icon: "linux"
-permalink: /cheatsheets/linux-enum/
+title: Linux Enumeration Cheatsheet
+slug: linux-enum
+date: 2026-08-16
+updated: 2026-08-19
+tags: [linux, enumeration, scanning, recon, Networking]
+description: A comprehensive guide for enumerating Linux systems during CTFs and penetration testing.
 ---
 
 # Linux Enumeration Cheatsheet
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 1. [System Information](#system-information)
 2. [Users & Groups](#users--groups)
 3. [Network](#network)
