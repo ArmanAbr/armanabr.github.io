@@ -1,16 +1,16 @@
 ---
-layout: page
-title: "SMB Enumeration Cheatsheet"
-description:  "A comprehensive guide for enumerating and exploiting SMB (Server Message Block) services during CTFs and penetration testing."
-icon: "smb"
-permalink: /cheatsheets/smb-enum/
+title: SMB Enumeration Cheatsheet
+slug: smb-enum
+date: 2026-08-16
+updated: 2026-08-19
+tags: [windows, active-directory, smb, enumeration, scanning, recon]
+description: A comprehensive guide for enumerating and exploiting SMB (Server Message Block) services during CTFs and penetration testing.
 ---
-
 # SMB Enumeration Cheatsheet
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 1. [Port & Service Detection](#port--service-detection)
 2. [Null Session / Anonymous Enumeration](#null-session--anonymous-enumeration)
 3. [Share Enumeration](#share-enumeration)
