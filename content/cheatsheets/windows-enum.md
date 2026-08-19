@@ -1,7 +1,7 @@
 ---
 title: Windows Enumeration Cheatsheet
 slug: windows-enum
-date: 2026-08-16
+date: 2026-08-12
 updated: 2026-08-19
 tags: [windows, active-directory, privilege-escalation, enumeration, scanning, recon]
 description: A comprehensive guide for enumerating Windows systems during CTFs and penetration testing.
