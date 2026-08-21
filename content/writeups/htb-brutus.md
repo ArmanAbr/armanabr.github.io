@@ -1,6 +1,6 @@
 ---
 title: HTB Sherlock · Brutus
-slug: htb-access
+slug: htb-brutus
 date: 2026-08-21
 image: brutus
 platform: HackTheBox
