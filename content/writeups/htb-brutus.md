@@ -41,6 +41,7 @@ actions, and cron jobs requiring authentication.
 | Authentication Status | Details whether the authentication attempt was successful or<br>failed.                                                           |
 | IP Address/Hostname   | For remote connections, the IP address or hostname of the<br>client attempting to connect.                                        |
 | Message               | A detailed message about the event, including any specific error messages<br>or codes associated with the authentication attempt. |
+
 An example entry has been detailed below:
 ```js
 Mar 10 10:23:45 exampleserver sshd[19360]: Failed password for invalid
@@ -66,11 +67,13 @@ through utilities like last, the following information is presented:
 | Login Time          | The date and time the user logged in.                                                               |
 | Logout Time         | The date and time the user logged out or the session was closed.                                    |
 | Duration            | The duration of the session.                                                                        |
+
 See below an example of the output of the 'last' command:
 ```js
 sebh24 pts/0 192.168.1.100 Sat Mar 10 10:23 - 10:25
 (00:02)
 ```
+
 This indicates that the user sebh24 logged in from 192.168.6.100 and the session lasted for
 a total of 2 minutes.
 
@@ -87,6 +90,7 @@ python3 utmp.py -o wtmp.out wtmp
 ```
 This provides us with a human readable `wtmp.out` file that we can open in tools such as
 cat or less.
+
 ### Understanding utmp.py Output
 The output of utmp.py includes several fields decoded from the binary format of the wtmp
 file. Here's a brief overview of the key fields in the output:
@@ -104,48 +108,31 @@ file. Here's a brief overview of the key fields in the output:
 | sec     | The timestamp of the event. **NB. This timestamp will be presented using your<br>system timezone and not the timezone of the system the wtmp was taken from.<br>You will need to account for this when investigating an incident timeline.** |
 | usec    | The microseconds component of the timestamp associated with a login or logout<br>event                                                                                                                                                       |
 | Addr    | Additional address information, which could be the IP address in the case of<br>remote logins.                                                                                                                                               |
-Both auth.log and WTMP are vital for system administrators and security professionals to
-monitor and audit authentication attempts, user activities, and system access patterns.
-They help in identifying unauthorized access attempts, ensuring compliance with security
-policies, and investigating security incidents.
-Okay now we understand more about the provided artifacts, lets delve into the auth.log for
-our analysis. We open our auth.log in our favorite text editor and prepare to answer the
-provided questions.
+
+Both auth.log and WTMP are vital for system administrators and security professionals to monitor and audit authentication attempts, user activities, and system access patterns. They help in identifying unauthorized access attempts, ensuring compliance with security policies, and investigating security incidents. Okay now we understand more about the provided artifacts, lets delve into the auth.log for our analysis. We open our auth.log in our favorite text editor and prepare to answer the provided questions.
 
 # Questions
 ---
 1. **Analyze the auth.log. What is the IP address used by the attacker to carry out a brute force attack?**
 
-To spot a brute force attack in the auth.log , look for repeated occurrences of "Invalid
-user" and "Failed password" entries within a short period. These entries indicate failed login
-attempts, often with incorrect usernames or passwords.
-In the provided logs there are numerous attempts from a single IP address, 65.2.161.68 ,
-indicating a brute force attack. Take particular note of the timestamps, all falling within
-seconds. A great rule of thumb when hunting for bruteforce attacks is to consider "Could a
-human attempt to authenticate this often manually". If the answer is no, we suggest
-additional investigation.
+To spot a brute force attack in the auth.log , look for repeated occurrences of "Invalid user" and "Failed password" entries within a short period. These entries indicate failed login attempts, often with incorrect usernames or passwords. In the provided logs there are numerous attempts from a single IP address, 65.2.161.68 , indicating a brute force attack. Take particular note of the timestamps, all falling within seconds. A great rule of thumb when hunting for bruteforce attacks is to consider "Could a human attempt to authenticate this often manually". If the answer is no, we suggest additional investigation.
 
 **Answer:** `65.2.161.68`
 
 2. **The bruteforce attempts were successful and attacker gained access to an account on the server. What is the username of the account?**
 
-We have confirmed the IP address performing a bruteforce attack, however we need to
-understand if the Threat Actor (TA) was successful. After a successful brute force attack, the
-keyword "Accepted password" signifies a successful login we are able to confirm the successful authentication of the root account as part of the same bruteforce attack, indicating they've compromised the most privileged user on the system. In the same second we additionally see the session is closed, which further indicates a bruteforcing tool being used.
+We have confirmed the IP address performing a bruteforce attack, however we need to understand if the Threat Actor (TA) was successful. After a successful brute force attack, the keyword "Accepted password" signifies a successful login we are able to confirm the successful authentication of the root account as part of the same bruteforce attack, indicating they've compromised the most privileged user on the system. In the same second we additionally see the session is closed, which further indicates a bruteforcing tool being used.
 
 **Answer:** `root`
 
 3.  **Identify the UTC timestamp when the attacker logged in manually to the server and established a terminal session to carry out their objectives. The login time will be different than the authentication time, and can be found in the wtmp artifact.**
 
-We confirm the TA authenticated at 06:32:44 with the root account, however for this specific
-analysis we will use the WTMP artifact as this will provide us the time when the attacker had
-an interactive terminal connected, and not just when the password was accepted. Before
-continuing, please see below a brief explanation as to the discrepancy in time between the
-WTMP and auth.log artifacts.
+We confirm the TA authenticated at 06:32:44 with the root account, however for this specific analysis we will use the WTMP artifact as this will provide us the time when the attacker had an interactive terminal connected, and not just when the password was accepted. Before continuing, please see below a brief explanation as to the discrepancy in time between the WTMP and auth.log artifacts.
 
 | auth.log                                                                                                  | WTMP                                                                                                                                                                                                                                           |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The auth.log in the<br>context of logging into<br>a host tracks<br>specifically<br>authentication events. | Entries in the WTMP record the creation and destruction of<br>terminals, or the assignment and release of terminals to users.<br>In this context we are able to track the interactive session<br>created by the TA accurately within the WTMP. |
+
 Reviewing the output of wtmp we are able to confirm the successful opening of an
 interactive terminal session by the TA at 06:32:45
 As described above this timestamp will be presented using our system timezone. We can
