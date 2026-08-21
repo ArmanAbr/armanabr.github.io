@@ -133,10 +133,7 @@ We confirm the TA authenticated at 06:32:44 with the root account, however for t
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The auth.log in the<br>context of logging into<br>a host tracks<br>specifically<br>authentication events. | Entries in the WTMP record the creation and destruction of<br>terminals, or the assignment and release of terminals to users.<br>In this context we are able to track the interactive session<br>created by the TA accurately within the WTMP. |
 
-Reviewing the output of wtmp we are able to confirm the successful opening of an
-interactive terminal session by the TA at 06:32:45
-As described above this timestamp will be presented using our system timezone. We can
-check this by running the `timedatectl` command and my system's timezone is EDT so i need to convert it to UTC to get the accurate time.
+Reviewing the output of wtmp we are able to confirm the successful opening of an interactive terminal session by the TA at 06:32:45 As described above this timestamp will be presented using our system timezone. We can check this by running the `timedatectl` command and my system's timezone is EDT so i need to convert it to UTC to get the accurate time.
 **Answer:** `2024-03-06 06:32:45`
 
 4. **SSH Login sessions are tracked and assigned a session number upon logon. What is attacker's session number for the user account from Question 2?**
