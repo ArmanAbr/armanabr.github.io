@@ -6,7 +6,7 @@ image: devhub
 platform: HackTheBox
 os: Linux
 difficulty: Medium
-points: 585
+points: 845
 tags: [hackthebox, linux, medium, active, mcpjam, cve-2026-23744, ps, jupyter, api, chisel, pivoting]
 description: DevHub is a Medium-difficulty Linux machine centered on Model Context Protocol (MCP) tooling. It starts with an unauthenticated RCE in an exposed MCPJam Inspector instance, then chains a leaked Jupyter Lab token (exposed via /proc) and a hardcoded admin API key to dump root's SSH private key.
 featured: true
