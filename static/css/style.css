@@ -124,13 +124,6 @@ html {
 body {
   margin: 0;
   background-color: var(--bg);
-  background-image:
-    radial-gradient(900px 480px at 50% -300px, var(--glow), transparent 70%),
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: auto, 64px 64px, 64px 64px;
-  background-position: center top, center top, center top;
-  background-attachment: fixed, fixed, fixed;
   color: var(--fg);
   font-family: var(--sans);
   font-size: 16px;
@@ -142,13 +135,24 @@ body {
   transition: background-color .3s ease, color .3s ease;
 }
 
+/* The grid + glow live on a single fixed, composited layer so they are
+   painted once and never repaint while scrolling (avoids scroll jank that
+   `background-attachment: fixed` would cause). */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: linear-gradient(180deg, transparent 0%, var(--bg) 82%);
+  transform: translateZ(0);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(180deg, transparent 0%, var(--bg) 82%),
+    radial-gradient(900px 480px at 50% -300px, var(--glow), transparent 70%),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: auto, auto, 64px 64px, 64px 64px;
+  background-position: center top;
 }
 body > * { position: relative; z-index: 1; }
 
