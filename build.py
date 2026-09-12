@@ -13,6 +13,7 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -39,6 +40,21 @@ DIST = ROOT / "dist"
 # frontmatter as `image: <name>` (extension optional).
 MACHINE_IMG_DIR = STATIC / "machines"
 MACHINE_IMG_EXTS = (".png", ".svg", ".webp", ".jpg", ".jpeg", ".gif", ".avif")
+
+
+def _build_version() -> str:
+    """Short hash of the files that determine the OG cards + meta, used to
+    version OG image URLs so social caches refetch when the card changes."""
+    h = hashlib.md5()
+    for rel in ("config.json", "ogimage.py",
+                "static/css/style.css", "templates/base.html"):
+        fp = ROOT / rel
+        if fp.exists():
+            h.update(fp.read_bytes())
+    return h.hexdigest()[:8]
+
+
+BUILD_VERSION = _build_version()
 
 # Each content type lives in content/<dir>/ and gets an index page at /<dir>/.
 COLLECTIONS = [
@@ -428,7 +444,11 @@ class Site:
         return f"{self.base_url}/{url}" if url else f"{self.base_url}/"
 
     def og_url_for(self, rel: str) -> str:
-        return f"{self.base_url}/{rel}"
+        # Version the OG image URL so social scrapers (LinkedIn especially) that
+        # cache images by URL are forced to refetch when the card changes,
+        # instead of showing a stale copy of /og/<name>.png.
+        sep = "&" if "?" in rel else "?"
+        return f"{self.base_url}/{rel}{sep}v={BUILD_VERSION}"
 
     def person_ld(self) -> dict:
         cfg = self.config
