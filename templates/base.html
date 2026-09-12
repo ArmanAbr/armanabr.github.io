@@ -6,15 +6,44 @@
 <title>{{title}}</title>
 <meta name="description" content="{{description}}">
 <meta name="author" content="{{site_name}}">
-<meta name="color-scheme" content="dark">
-<meta property="og:type" content="website">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0b1220">
+<link rel="canonical" href="{{canonical}}">
+
+<!-- Open Graph -->
+<meta property="og:type" content="{{og_type}}">
 <meta property="og:title" content="{{title}}">
 <meta property="og:description" content="{{description}}">
 <meta property="og:site_name" content="{{site_name}}">
-<meta name="twitter:card" content="summary">
+<meta property="og:url" content="{{canonical}}">
+<meta property="og:image" content="{{og_image}}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{title}}">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{title}}">
+<meta name="twitter:description" content="{{description}}">
+<meta name="twitter:image" content="{{og_image}}">
+{{twitter_handle}}
+
 <link rel="stylesheet" href="{{root}}static/css/style.css">
 <link rel="stylesheet" href="{{root}}static/css/syntax.css">
 <link rel="icon" href="{{root}}static/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/atom+xml" title="{{site_name}} — feed" href="{{root}}feed.xml">
+{{head_extra}}
+
+<!-- Set the theme before first paint to avoid a flash. -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("theme");
+    if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
 </head>
 <body class="{{body_class}}">
 
@@ -26,10 +55,21 @@
       <span class="brand-mark" aria-hidden="true"></span>
       <span class="brand-text">{{site_short}}</span><span class="brand-cursor" aria-hidden="true"></span>
     </a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation">
-      <span></span><span></span><span></span>
-    </button>
+
     <nav class="site-nav" id="site-nav">{{nav}}</nav>
+
+    <div class="header-tools">
+      <button class="icon-btn" id="search-open" type="button" aria-label="Search" title="Search (press /)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </button>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme" title="Toggle theme">
+        <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"></path></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8z"></path></svg>
+      </button>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -43,10 +83,23 @@
       <p class="footer-name">{{site_name}}</p>
       <p class="footer-note">{{footer_note}}</p>
     </div>
-    <nav class="footer-social">{{social}}</nav>
+    <nav class="footer-social" aria-label="Social links">{{social}}</nav>
     <p class="footer-legal">&copy; {{year}} {{site_name}}. All content is my own unless credited.</p>
   </div>
 </footer>
+
+<!-- Search overlay (progressive enhancement; hidden without JS). -->
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-box" role="dialog" aria-modal="true" aria-label="Search the site">
+    <div class="search-input-row">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input class="search-input" id="search-input" type="search" placeholder="Search writeups, posts, cheatsheets…" aria-label="Search" autocomplete="off">
+      <button class="search-close" id="search-close" type="button" aria-label="Close search">esc</button>
+    </div>
+    <ul class="search-results" id="search-results"></ul>
+    <p class="search-hint" id="search-hint">Type to search across every writeup, post and cheatsheet.</p>
+  </div>
+</div>
 
 <script src="{{root}}static/js/site.js" defer></script>
 </body>
