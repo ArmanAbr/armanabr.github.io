@@ -27,6 +27,8 @@ from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.extensions.toc import TocExtension
 from pygments.formatters import HtmlFormatter
 
+import ogimage
+
 ROOT = Path(__file__).parent.resolve()
 CONTENT = ROOT / "content"
 TEMPLATES = ROOT / "templates"
@@ -273,7 +275,8 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
             tags.append({"slug": s, "name": str(t).strip()})
 
     body_html, toc = render_markdown(md, body)
-    words = len(re.findall(r"\w+", re.sub(r"<[^>]+>", " ", body_html)))
+    plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body_html)).strip()
+    words = len(re.findall(r"\w+", plain))
 
     return {
         "path": path,
@@ -296,6 +299,8 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
         "image": resolve_machine_image(meta.get("image"), path.name),
         "html": body_html,
         "toc": toc,
+        "text": plain[:1200],
+        "og_image": f"og/{col['key']}-{slug}.png",
         "words": words,
         "reading_time": max(1, round(words / 200)),
     }
@@ -407,6 +412,42 @@ class Site:
         self.tags = tags
         self.base = (TEMPLATES / "base.html").read_text(encoding="utf-8")
         self.pages_written = 0
+        self.base_url = config.get("url", "").rstrip("/")
+
+        # Twitter/X site meta, derived from the configured profile URL.
+        handle = ""
+        tw = (config.get("social") or {}).get("twitter", "")
+        if tw:
+            handle = "@" + tw.rstrip("/").rsplit("/", 1)[-1].lstrip("@")
+        self.twitter_meta = (
+            f'<meta name="twitter:site" content="{e(handle)}">'
+            f'<meta name="twitter:creator" content="{e(handle)}">' if handle else ""
+        )
+
+    def canonical_for(self, url: str) -> str:
+        return f"{self.base_url}/{url}" if url else f"{self.base_url}/"
+
+    def og_url_for(self, rel: str) -> str:
+        return f"{self.base_url}/{rel}"
+
+    def person_ld(self) -> dict:
+        cfg = self.config
+        same = [u for u in (cfg.get("social") or {}).values() if u]
+        person = {
+            "@type": "Person",
+            "name": cfg["site_name"],
+            "url": self.base_url + "/",
+            "jobTitle": "Cybersecurity student / penetration testing",
+        }
+        if same:
+            person["sameAs"] = same
+        if cfg.get("email"):
+            person["email"] = f"mailto:{cfg['email']}"
+        return person
+
+    def jsonld(self, obj: dict) -> str:
+        return ('<script type="application/ld+json">'
+                + json.dumps(obj, ensure_ascii=False) + "</script>")
 
     # -- rendering shell ---------------------------------------------------
 
@@ -442,7 +483,9 @@ class Site:
         return "".join(links)
 
     def write(self, url: str, title: str, content: str, *, description: str = "",
-              current: str = "", body_class: str = "") -> None:
+              current: str = "", body_class: str = "", og_image: str = "og/default.png",
+              og_type: str = "website", head_extra: str = "",
+              canonical: str | None = None) -> None:
         """Render base.html around `content` and write it to dist/<url>index.html."""
         root = "../" * depth_of(url)
         full_title = title if url == "" else f"{title} · {self.config['site_name']}"
@@ -454,6 +497,11 @@ class Site:
                 .replace("{{description}}", e(description or self.config["description"]))
                 .replace("{{site_name}}", e(self.config["site_name"]))
                 .replace("{{site_short}}", e(self.config["site_short"]))
+                .replace("{{canonical}}", e(canonical or self.canonical_for(url)))
+                .replace("{{og_type}}", e(og_type))
+                .replace("{{og_image}}", e(self.og_url_for(og_image)))
+                .replace("{{twitter_handle}}", self.twitter_meta)
+                .replace("{{head_extra}}", head_extra)
                 .replace("{{nav}}", self.nav_html(root, current))
                 .replace("{{social}}", self.social_html(root))
                 .replace("{{footer_note}}", e(self.config.get("footer_note", "")))
@@ -505,13 +553,19 @@ class Site:
   <ul class="rows">{rows}</ul>
 </section>"""
 
+        badge = (f'<p class="hero-badge">{e(cfg["availability"])}</p>'
+                 if cfg.get("availability") else "")
+        contact = (f'<a class="btn" href="mailto:{e(cfg["email"])}">Get in touch</a>'
+                   if cfg.get("email") else "")
         content = f"""<section class="hero">
+  {badge}
   <p class="hero-kicker">{e(cfg['tagline'])}</p>
   <h1 class="hero-title">{e(cfg['hero_intro'])}</h1>
   <p class="hero-blurb">{e(cfg['hero_blurb'])}</p>
   <div class="hero-actions">
     <a class="btn btn-primary" href="writeups/">Read the writeups</a>
     <a class="btn" href="resume/">View resume</a>
+    {contact}
   </div>
 </section>
 
@@ -527,8 +581,23 @@ class Site:
   </div>
   <div class="pills pills-lg">{tag_cloud}</div>
 </section>"""
+        website_ld = self.jsonld({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": cfg["site_name"],
+            "url": self.base_url + "/",
+            "description": cfg["description"],
+            "author": self.person_ld(),
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": self.base_url + "/tags/?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+            },
+        })
+        person_ld = self.jsonld({"@context": "https://schema.org", **self.person_ld()})
         self.write("", cfg["site_name"], content, description=cfg["description"],
-                   current="", body_class="page-home")
+                   current="", body_class="page-home",
+                   head_extra=website_ld + person_ld)
 
     def build_collection(self, col: dict) -> None:
         docs = [d for d in self.docs if d["collection"] == col["key"]]
@@ -668,9 +737,30 @@ class Site:
 {pagenav}
 {related_html}"""
 
+        art_type = "TechArticle" if doc["collection"] == "cheatsheets" else "BlogPosting"
+        ld = {
+            "@context": "https://schema.org",
+            "@type": art_type,
+            "headline": doc["title"],
+            "url": self.canonical_for(doc["url"]),
+            "mainEntityOfPage": self.canonical_for(doc["url"]),
+            "image": self.og_url_for(doc["og_image"]),
+            "author": self.person_ld(),
+            "publisher": self.person_ld(),
+            "description": doc["description"] or f"{col['singular']} — {doc['title']}",
+        }
+        if doc["date"]:
+            ld["datePublished"] = iso_date(doc["date"])
+        if doc["updated"] or doc["date"]:
+            ld["dateModified"] = iso_date(doc["updated"] or doc["date"])
+        if doc["tags"]:
+            ld["keywords"] = ", ".join(t["name"] for t in doc["tags"])
+
         self.write(doc["url"], doc["title"], content,
                    description=doc["description"] or f"{col['singular']} — {doc['title']}",
-                   current=col["dir"], body_class="page-doc")
+                   current=col["dir"], body_class="page-doc",
+                   og_image=doc["og_image"], og_type="article",
+                   head_extra=self.jsonld(ld))
 
     def build_tags_index(self) -> None:
         root = "../"
@@ -802,9 +892,12 @@ class Site:
   </header>
   <div class="prose prose-resume">{body_html}</div>
 </div>"""
+        head_extra = ""
+        if current == "resume":
+            head_extra = self.jsonld({"@context": "https://schema.org", **self.person_ld()})
         self.write(url, title, content,
                    description=str(meta.get("description") or ""),
-                   current=current, body_class=body_class)
+                   current=current, body_class=body_class, head_extra=head_extra)
 
     def build_404(self) -> None:
         content = """<section class="hero hero-404">
@@ -817,8 +910,6 @@ class Site:
     <a class="btn" href="/tags/">Tags</a>
   </div>
 </section>"""
-        page_root = ""
-        root = ""
         full = (self.base
                 .replace("{{root}}", "/")
                 .replace("{{home}}", "/")
@@ -827,6 +918,11 @@ class Site:
                 .replace("{{description}}", "Page not found")
                 .replace("{{site_name}}", e(self.config["site_name"]))
                 .replace("{{site_short}}", e(self.config["site_short"]))
+                .replace("{{canonical}}", e(self.canonical_for("404.html")))
+                .replace("{{og_type}}", "website")
+                .replace("{{og_image}}", e(self.og_url_for("og/default.png")))
+                .replace("{{twitter_handle}}", self.twitter_meta)
+                .replace("{{head_extra}}", "")
                 .replace("{{nav}}", self.nav_html("/", ""))
                 .replace("{{social}}", self.social_html("/"))
                 .replace("{{footer_note}}", e(self.config.get("footer_note", "")))
@@ -852,7 +948,7 @@ class Site:
         )
 
     def build_search_index(self) -> None:
-        """Small JSON index — powers the filter boxes and any future search UI."""
+        """JSON index that powers the header search overlay and filter boxes."""
         data = [{
             "title": d["title"],
             "url": d["url"],
@@ -860,8 +956,67 @@ class Site:
             "date": iso_date(d["date"]),
             "tags": [t["name"] for t in d["tags"]],
             "description": d["description"],
+            "text": d["text"],
         } for d in self.docs]
-        (DIST / "index.json").write_text(json.dumps(data, indent=1), encoding="utf-8")
+        (DIST / "index.json").write_text(
+            json.dumps(data, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
+
+    def build_og_images(self) -> None:
+        """Render a social-preview PNG per document plus a default site card."""
+        cfg = self.config
+        short = cfg.get("site_short", "")
+        site = self.base_url or cfg.get("url", "")
+        ok = ogimage.generate_default(
+            DIST / "og" / "default.png", ROOT,
+            title=cfg["site_name"], subtitle=cfg.get("description", ""),
+            eyebrow=cfg.get("tagline", "").upper(),
+            site_short=short, site_url=site)
+        if not ok:
+            print("  ! Pillow unavailable — skipping OG images (using favicon fallback)")
+            return
+        made = 1
+        for d in self.docs:
+            logo = f"static/machines/{d['image']}" if d["image"] else ""
+            ogimage.generate_card(
+                DIST / d["og_image"], ROOT,
+                title=d["title"], kind=d["collection_singular"],
+                date_str=human_date(d["date"]),
+                tags=[t["name"] for t in d["tags"]],
+                difficulty=d["difficulty"], logo_path=logo,
+                site_short=short, site_url=site)
+            made += 1
+        print(f"  {made} social cards → {DIST / 'og'}")
+
+    def build_feed(self) -> None:
+        """Atom feed of the most recent content across all collections."""
+        base = self.base_url
+        updated = max((d["date"] for d in self.docs if d["date"]), default=date.today())
+        entries = []
+        for d in self.docs[:20]:
+            url = self.canonical_for(d["url"])
+            when = iso_date(d["date"]) or date.today().isoformat()
+            summary = d["description"] or (d["text"][:200] + "…")
+            entries.append(
+                f"<entry><title>{e(d['title'])}</title>"
+                f'<link href="{e(url)}"/><id>{e(url)}</id>'
+                f"<updated>{when}T00:00:00Z</updated>"
+                f"<category term=\"{e(d['collection'])}\"/>"
+                f"<summary>{e(summary)}</summary></entry>"
+            )
+        feed = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<feed xmlns="http://www.w3.org/2005/Atom">'
+            f"<title>{e(self.config['site_name'])}</title>"
+            f'<link href="{e(base)}/"/>'
+            f'<link rel="self" href="{e(base)}/feed.xml"/>'
+            f"<id>{e(base)}/</id>"
+            f"<updated>{updated.isoformat()}T00:00:00Z</updated>"
+            f"<author><name>{e(self.config['site_name'])}</name></author>"
+            f"<subtitle>{e(self.config['description'])}</subtitle>"
+            + "".join(entries) + "</feed>"
+        )
+        (DIST / "feed.xml").write_text(feed, encoding="utf-8")
 
 
 # --------------------------------------------------------------------------
@@ -891,6 +1046,14 @@ def copy_static() -> None:
 # --------------------------------------------------------------------------
 
 def main() -> int:
+    # Keep console output UTF-8 even when stdout is redirected to a non-UTF-8
+    # codepage (e.g. Windows cp1252), so the arrows/bullets we print never crash.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
     args = sys.argv[1:]
     include_drafts = "--drafts" in args
 
@@ -918,7 +1081,10 @@ def main() -> int:
     site.build_404()
     site.build_sitemap()
     site.build_search_index()
+    site.build_feed()
     copy_static()
+    print("Rendering social cards…")
+    site.build_og_images()
 
     print(f"\n  {len(docs)} documents · {len(tags)} tags · "
           f"{site.pages_written} pages → {DIST}")
