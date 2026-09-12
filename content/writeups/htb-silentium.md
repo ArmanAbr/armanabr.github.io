@@ -8,7 +8,7 @@ os: Linux
 difficulty: Easy
 points: 585
 tags: [hackthebox, linux, easy, active, gogs, flowise, cve-2025-8110]
-description: Silentium is an easy Linux machine featuring two vulnerable services: Flowise (AI workflow builder) and Gogs (Git service).
+description: "Silentium is an easy Linux machine featuring two vulnerable services: Flowise (AI workflow builder) and Gogs (Git service)."
 featured: true
 ---
 
