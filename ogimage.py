@@ -118,6 +118,24 @@ def _wrap(draw, text, font, max_w: int, max_lines: int) -> list[str]:
     return lines
 
 
+def _fit(draw, root: Path, kind: str, text: str, max_size: int, min_size: int,
+         max_w: int, max_lines: int):
+    """Largest font size at which `text` wraps within max_lines and max_w with
+    no word dropped. Returns (font, lines, size). Makes the layout robust to
+    the font differing between local (Segoe/Arial) and CI (DejaVu, wider)."""
+    want = len(str(text).split())
+    for size in range(max_size, min_size - 1, -2):
+        f = _font(root, kind, size)
+        lines = _wrap(draw, text, f, max_w, max_lines)
+        got = sum(len(l.split()) for l in lines)
+        no_ellipsis = all(not l.endswith("…") for l in lines)
+        width_ok = all(_text_w(draw, l, f) <= max_w for l in lines)
+        if got >= want and no_ellipsis and width_ok:
+            return f, lines, size
+    f = _font(root, kind, min_size)
+    return f, _wrap(draw, text, f, max_w, max_lines), min_size
+
+
 def _gradient_bg() -> Image.Image:
     img = Image.new("RGB", (W, H), BG_BOT)
     px = img.load()
@@ -197,13 +215,13 @@ def generate_card(out_path: Path, root: Path, *, title: str, kind: str = "",
         draw.text((PAD, y), eb, font=f, fill=ACCENT)
         y += 46
 
-    # Title.
-    title_font = _font(root, "bold", 68)
-    avail = W - PAD - (PAD + 170 if logo_path else PAD)
-    lines = _wrap(draw, title, title_font, W - 2 * PAD, max_lines=3)
+    # Title — auto-sized so it fits within 2 lines without overflowing.
+    title_font, lines, tsize = _fit(draw, root, "bold", title, 68, 44,
+                                    W - 2 * PAD, max_lines=2)
+    line_h = int(tsize * 1.24)
     for line in lines:
         draw.text((PAD, y), line, font=title_font, fill=FG_STRONG)
-        y += 84
+        y += line_h
 
     # Difficulty chip (writeups).
     y = min(y + 10, H - 170)
@@ -250,20 +268,24 @@ def generate_default(out_path: Path, root: Path, *, title: str, subtitle: str = 
     draw = ImageDraw.Draw(img)
     _brand_row(draw, root, site_short)
 
+    maxw = W - 2 * PAD
     f_eye = _font(root, "mono", 30)
     draw.text((PAD, 244), eyebrow, font=f_eye, fill=ACCENT)
 
-    title_font = _font(root, "bold", 96)
-    y = 300
-    for line in _wrap(draw, title, title_font, W - 2 * PAD, max_lines=2):
+    # Name on a single line, auto-sized so it can never wrap/overflow.
+    title_font, tlines, tsize = _fit(draw, root, "bold", title, 96, 56, maxw, 1)
+    line_h = int(tsize * 1.14)
+    y = 302
+    for line in tlines:
         draw.text((PAD, y), line, font=title_font, fill=FG_STRONG)
-        y += 108
+        y += line_h
 
     if subtitle:
-        sf = _font(root, "reg", 34)
-        for line in _wrap(draw, subtitle, sf, W - 2 * PAD, max_lines=2):
-            draw.text((PAD, y + 10), line, font=sf, fill=FG)
-            y += 46
+        sf, slines, ssize = _fit(draw, root, "reg", subtitle, 34, 22, maxw, 1)
+        y += 8
+        for line in slines:
+            draw.text((PAD, y), line, font=sf, fill=FG)
+            y += int(ssize * 1.35)
 
     f = _font(root, "mono", 24)
     draw.text((PAD, H - 62), site_url.replace("https://", "").replace("http://", ""),
