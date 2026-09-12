@@ -200,9 +200,10 @@ main { flex: 1 0 auto; padding-block: clamp(2.5rem, 6vw, 4.5rem) 5rem; }
 
 .site-header {
   position: sticky; top: 0; z-index: 50;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  /* Solid (not backdrop-blur): Firefox re-blurs a backdrop-filter on every
+     scroll frame, which caused scroll jank there. A solid bar is smooth
+     in every browser and reads cleaner. */
+  background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
 .header-inner { display: flex; align-items: center; gap: 1rem; min-height: 62px; }
