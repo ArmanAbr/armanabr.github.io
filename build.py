@@ -969,7 +969,8 @@ class Site:
         site = self.base_url or cfg.get("url", "")
         ok = ogimage.generate_default(
             DIST / "og" / "default.png", ROOT,
-            title=cfg["site_name"], subtitle=cfg.get("description", ""),
+            title=cfg["site_name"],
+            subtitle="HackTheBox writeups · Active Directory · web exploitation · privesc",
             eyebrow=cfg.get("tagline", "").upper(),
             site_short=short, site_url=site)
         if not ok:
