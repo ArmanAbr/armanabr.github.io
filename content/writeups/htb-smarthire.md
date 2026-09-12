@@ -21,7 +21,7 @@ group-writable directory, and a one-line `.pth` file hands us root.
 
 The whole chain is short and reliable:
 
-> MLflow default creds → overwrite a pickled model → RCE as `svcweb` → malicious `.pth` in a `devs`-writable plugin dir → root.
+MLflow default creds → overwrite a pickled model → RCE as `svcweb` → malicious `.pth` in a `devs`-writable plugin dir → root.
 ---
 ## Reconnaissance
 Start with a full port scan, then service detection on what's open.
