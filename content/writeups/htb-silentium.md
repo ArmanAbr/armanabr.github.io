@@ -8,7 +8,7 @@ os: Linux
 difficulty: Easy
 points: 585
 tags: [hackthebox, linux, easy, active, gogs, flowise, cve-2025-8110]
-description: Bastion is an easy-rated Windows machine on Hack The Box that centers on enumerating an exposed SMB share containing a Windows VHD backup file, which can be mounted to extract SAM/SYSTEM hives and dump local password hashes. Privilege escalation then comes from recovering stored credentials in the mRemoteNG configuration, leading to full administrative access.
+description: Silentium is an easy Linux machine featuring two vulnerable services: Flowise (AI workflow builder) and Gogs (Git service).
 featured: true
 ---
 
