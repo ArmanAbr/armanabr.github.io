@@ -250,20 +250,20 @@ def generate_default(out_path: Path, root: Path, *, title: str, subtitle: str = 
     draw = ImageDraw.Draw(img)
     _brand_row(draw, root, site_short)
 
-    f_eye = _font(root, "mono", 26)
-    draw.text((PAD, 235), eyebrow, font=f_eye, fill=ACCENT)
+    f_eye = _font(root, "mono", 30)
+    draw.text((PAD, 244), eyebrow, font=f_eye, fill=ACCENT)
 
-    title_font = _font(root, "bold", 76)
-    y = 285
+    title_font = _font(root, "bold", 96)
+    y = 300
     for line in _wrap(draw, title, title_font, W - 2 * PAD, max_lines=2):
         draw.text((PAD, y), line, font=title_font, fill=FG_STRONG)
-        y += 92
+        y += 108
 
     if subtitle:
-        sf = _font(root, "reg", 30)
+        sf = _font(root, "reg", 34)
         for line in _wrap(draw, subtitle, sf, W - 2 * PAD, max_lines=2):
-            draw.text((PAD, y + 8), line, font=sf, fill=FG_MUTED)
-            y += 42
+            draw.text((PAD, y + 10), line, font=sf, fill=FG)
+            y += 46
 
     f = _font(root, "mono", 24)
     draw.text((PAD, H - 62), site_url.replace("https://", "").replace("http://", ""),
