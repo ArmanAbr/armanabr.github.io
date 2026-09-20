@@ -1,7 +1,7 @@
 ---
 title: "Network Segmentation for Homelabs"
 date: 2026-08-02
-description: "A practical guide to segmenting your homelab network with VLANs, firewall rules, and IoT isolation — no enterprise buzzwords, just working configs."
+description: "A practical guide to segmenting your homelab network with VLANs, firewall rules, and IoT isolation - no enterprise buzzwords, just working configs."
 tags: ["homelab", "networking", "vlan", "firewall", "iot-security"]
 categories: ["articles"]
 author: "Arman Abrahamyan"
@@ -9,7 +9,7 @@ author: "Arman Abrahamyan"
 
 # Network Segmentation for Homelabs
 
-> Your smart fridge shouldn't be able to scan your NAS. Network segmentation isn't just for enterprises — it's the single most impactful security upgrade you can make to a homelab. This guide covers practical VLAN setup, firewall rules, and IoT isolation using common consumer and prosumer gear.
+> Your smart fridge shouldn't be able to scan your NAS. Network segmentation isn't just for enterprises - it's the single most impactful security upgrade you can make to a homelab. This guide covers practical VLAN setup, firewall rules, and IoT isolation using common consumer and prosumer gear.
 
 ---
 
@@ -104,7 +104,7 @@ GUEST  → can reach → INTERNET only (blocked from TRUST, IOT)
 
 ### pfSense Rules
 
-**TRUST (VLAN 10) — Allow outbound:**
+**TRUST (VLAN 10) - Allow outbound:**
 
 ```
 Action: Pass
@@ -115,7 +115,7 @@ Destination: Any
 Description: Allow all outbound from TRUST
 ```
 
-**IOT (VLAN 20) — Block TRUST, allow Internet:**
+**IOT (VLAN 20) - Block TRUST, allow Internet:**
 
 ```
 Action: Block
@@ -133,7 +133,7 @@ Destination: Any
 Description: Allow IOT to Internet
 ```
 
-**GUEST (VLAN 30) — Isolate completely:**
+**GUEST (VLAN 30) - Isolate completely:**
 
 ```
 Action: Block
@@ -204,7 +204,7 @@ Settings → Networks → Create New
 Devices → Switch → Ports
 
 Port 1 (Router uplink):
-  Profile: ALL (trunk — carries all VLANs)
+  Profile: ALL (trunk - carries all VLANs)
 
 Port 2 (NAS/Server):
   Profile: TRUST
@@ -286,10 +286,10 @@ Segmentation is layer 1. Add these for defense in depth:
 - **Change default passwords** on every IoT device
 - **Disable UPnP** on the router (IoT devices shouldn't open ports)
 - **Disable unused services** (telnet, SSH, web admin if not needed)
-- **Firmware updates** — enable auto-update where available
+- **Firmware updates** - enable auto-update where available
 - **No IoT cloud access** if local control works (Home Assistant, Zigbee2MQTT)
-- **Camera isolation** — separate VLAN with no Internet access, NVR only
-- **DNS filtering** — Pi-hole/AdGuard on IOT VLAN to block C2 domains
+- **Camera isolation** - separate VLAN with no Internet access, NVR only
+- **DNS filtering** - Pi-hole/AdGuard on IOT VLAN to block C2 domains
 
 ---
 
@@ -382,7 +382,7 @@ Set up alerts for suspicious cross-VLAN traffic:
 
 ## Conclusion
 
-Network segmentation transforms your flat, vulnerable home network into a layered defense architecture. The investment is minimal — an old PC or a $150 router — but the security return is enormous.
+Network segmentation transforms your flat, vulnerable home network into a layered defense architecture. The investment is minimal - an old PC or a $150 router - but the security return is enormous.
 
 **Start simple:** Three VLANs (TRUST, IOT, GUEST) with basic firewall rules. **Then iterate:** Add camera isolation, DNS filtering, and IDS/IPS as you grow.
 
@@ -395,5 +395,5 @@ Network segmentation transforms your flat, vulnerable home network into a layere
 - [pfSense Documentation](https://docs.netgate.com/pfsense/en/latest/)
 - [OPNsense Documentation](https://docs.opnsense.org/)
 - [UniFi Network Design](https://help.ui.com/hc/en-us/articles/360012282453)
-- [Practical Networking — VLANs Explained](https://www.practicalnetworking.net/stand-alone/vlans/)
+- [Practical Networking - VLANs Explained](https://www.practicalnetworking.net/stand-alone/vlans/)
 - [OWASP IoT Security Guidance](https://owasp.org/www-project-internet-of-things/)

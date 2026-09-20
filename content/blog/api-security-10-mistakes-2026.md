@@ -327,7 +327,7 @@ def login(credentials: LoginSchema):
 
 ## Conclusion
 
-API security isn't about one big fix — it's about layering defenses. Each of these mistakes represents a real-world breach vector that continues to be exploited. Review your APIs against this list, automate what you can, and treat security as a continuous process, not a one-time checklist.
+API security isn't about one big fix - it's about layering defenses. Each of these mistakes represents a real-world breach vector that continues to be exploited. Review your APIs against this list, automate what you can, and treat security as a continuous process, not a one-time checklist.
 
 > **Further Reading:**
 > - [OWASP API Security Top 10 2023](https://owasp.org/API-Security/editions/2023/en/0x00-header/)

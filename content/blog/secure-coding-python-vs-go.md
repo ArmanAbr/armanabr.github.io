@@ -1,7 +1,7 @@
 ---
 title: "Secure Coding Patterns in Python vs. Go"
 date: 2026-07-26
-description: "A side-by-side comparison of secure coding patterns in Python and Go — covering input validation, secrets management, safe deserialization, and more."
+description: "A side-by-side comparison of secure coding patterns in Python and Go - covering input validation, secrets management, safe deserialization, and more."
 tags: ["secure-coding", "python", "go", "comparison", "best-practices"]
 categories: ["articles"]
 author: "Arman Abrahamyan"
@@ -151,7 +151,7 @@ query := "SELECT * FROM users WHERE username = '" + username + "'"
 // ✅ DO: Parameterized queries
 func getUser(db *sql.DB, username string) (*User, error) {
     var user User
-    // $1 is a positional parameter — safe from injection
+    // $1 is a positional parameter - safe from injection
     err := db.QueryRow(
         "SELECT id, username, email FROM users WHERE username = $1",
         username,
@@ -164,7 +164,7 @@ func getUser(db *sql.DB, username string) (*User, error) {
 }
 ```
 
-**Verdict:** Both languages support safe parameterized queries. The risk is the same — developer discipline matters more than the language.
+**Verdict:** Both languages support safe parameterized queries. The risk is the same - developer discipline matters more than the language.
 
 ---
 

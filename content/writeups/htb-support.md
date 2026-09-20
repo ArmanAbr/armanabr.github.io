@@ -327,7 +327,7 @@ impacket-rbcd -action write -delegate-from 'FAKE01$' -delegate-to 'DC$' -dc-ip 1
 
 ## Step 4: Request a Service Ticket as Administrator
 
-With RBCD configured, we can now request a service ticket impersonating any user — including the Domain Admin:
+With RBCD configured, we can now request a service ticket impersonating any user - including the Domain Admin:
 
 ```bash
 impacket-getST -spn cifs/dc.support.htb -impersonate Administrator -dc-ip 10.129.230.181 support.htb/FAKE01$:'FakePass123!'
@@ -339,7 +339,7 @@ impacket-getST -spn cifs/dc.support.htb -impersonate Administrator -dc-ip 10.129
 - Asks to impersonate the `Administrator` user
 - The DC trusts `FAKE01$` for delegation (because we configured RBCD), so it issues the ticket
 
-This generates a file named `Administrator.ccache` — a Kerberos ticket cache for the Administrator user.
+This generates a file named `Administrator.ccache` - a Kerberos ticket cache for the Administrator user.
 
 ---
 

@@ -63,7 +63,7 @@ COLLECTIONS = [
         "dir": "writeups",
         "title": "Writeups",
         "singular": "Writeup",
-        "blurb": "Machine and challenge walkthroughs — enumeration, foothold, "
+        "blurb": "Machine and challenge walkthroughs - enumeration, foothold, "
                  "privilege escalation, and what I took away from each box.",
     },
     {
@@ -85,7 +85,42 @@ COLLECTIONS = [
 ]
 COLLECTION_BY_KEY = {c["key"]: c for c in COLLECTIONS}
 
-DIFFICULTY_ORDER = {"very easy": 0, "easy": 1, "medium": 2, "hard": 3, "insane": 4}
+DIFFICULTY_ORDER = {"intro": 0, "very easy": 1, "easy": 2, "medium": 3,
+                    "hard": 4, "insane": 5}
+
+# CTF walkthroughs: content/ctf/<event>/<Category>/<challenge>.md, with an
+# event.md per CTF holding its metadata and a logo in static/ctf/.
+CTF_DIR = CONTENT / "ctf"
+CTF_IMG_DIR = STATIC / "ctf"
+CTF_BLURB = ("Capture-the-Flag walkthroughs, grouped by event. Each challenge is a "
+             "short, reproducible writeup - how I found the bug and pulled the flag.")
+CATEGORY_ORDER = {
+    "reverse engineering": 0, "reversing": 0, "reverse": 0, "rev": 0,
+    "web": 1,
+    "pwn": 2, "binary exploitation": 2,
+    "crypto": 3, "cryptography": 3,
+    "misc": 4,
+    "forensics": 5,
+    "game hacking": 6, "game-hacking": 6,
+    "osint": 7, "hardware": 8, "mobile": 9, "blockchain": 10,
+}
+
+# Canonical display casing for categories (folders/frontmatter may vary).
+CATEGORY_DISPLAY = {
+    "reverse engineering": "Reverse Engineering", "reversing": "Reverse Engineering",
+    "reverse": "Reverse Engineering", "rev": "Reverse Engineering",
+    "web": "Web", "pwn": "Pwn", "binary exploitation": "Pwn",
+    "crypto": "Crypto", "cryptography": "Crypto",
+    "misc": "Misc", "forensics": "Forensics",
+    "game hacking": "Game Hacking", "game-hacking": "Game Hacking",
+    "osint": "OSINT", "hardware": "Hardware", "mobile": "Mobile",
+    "blockchain": "Blockchain",
+}
+
+
+def canon_category(name) -> str:
+    n = str(name).strip()
+    return CATEGORY_DISPLAY.get(n.lower(), n)
 
 
 # --------------------------------------------------------------------------
@@ -186,6 +221,19 @@ def human_date(d: date | None) -> str:
     return d.strftime("%b %d, %Y") if d else ""
 
 
+def human_date_range(start: date | None, end: date | None) -> str:
+    """'Sep 19-20, 2026' for a multi-day event; single date otherwise."""
+    if not start:
+        return human_date(end)
+    if not end or end == start:
+        return human_date(start)
+    if start.year == end.year and start.month == end.month:
+        return f"{start:%b %d}-{end:%d}, {start:%Y}"
+    if start.year == end.year:
+        return f"{start:%b %d} - {end:%b %d}, {start:%Y}"
+    return f"{human_date(start)} - {human_date(end)}"
+
+
 def iso_date(d: date | None) -> str:
     return d.isoformat() if d else ""
 
@@ -210,7 +258,7 @@ def resolve_machine_image(value, doc_name: str = "") -> str:
         return ""
 
     given = Path(name)
-    # Exact filename (with extension) that exists — use it directly.
+    # Exact filename (with extension) that exists - use it directly.
     if given.suffix and (MACHINE_IMG_DIR / name).is_file():
         return name
 
@@ -293,6 +341,7 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
     body_html, toc = render_markdown(md, body)
     plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body_html)).strip()
     words = len(re.findall(r"\w+", plain))
+    image = resolve_machine_image(meta.get("image"), path.name)
 
     return {
         "path": path,
@@ -312,7 +361,8 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
         "difficulty": str(meta.get("difficulty") or ""),
         "os": str(meta.get("os") or ""),
         "points": meta.get("points") or "",
-        "image": resolve_machine_image(meta.get("image"), path.name),
+        "image": image,
+        "logo_path": f"static/machines/{image}" if image else "",
         "html": body_html,
         "toc": toc,
         "text": plain[:1200],
@@ -334,6 +384,188 @@ def build_tag_index(docs: list[dict]) -> dict[str, dict]:
         entry["count"] = len(entry["docs"])
         entry["url"] = f"tags/{entry['slug']}/"
     return dict(sorted(tags.items(), key=lambda kv: kv[0]))
+
+
+# --------------------------------------------------------------------------
+# CTF walkthroughs
+# --------------------------------------------------------------------------
+
+def tag_dicts(raw) -> list[dict]:
+    """Normalise a tags value (list or comma string) into {slug, name} dicts."""
+    if isinstance(raw, str):
+        raw = [t.strip() for t in raw.split(",") if t.strip()]
+    out, seen = [], set()
+    for t in (raw or []):
+        s = slugify(t)
+        if s and s not in seen:
+            seen.add(s)
+            out.append({"slug": s, "name": str(t).strip()})
+    return out
+
+
+def natural_key(value: str):
+    """Sort 'Intro to Web 2' before 'Intro to Web 10'."""
+    return [int(p) if p.isdigit() else p.lower()
+            for p in re.split(r"(\d+)", str(value))]
+
+
+def resolve_ctf_logo(value, slug: str) -> str:
+    """Find a CTF logo in static/ctf/ by explicit name or by event slug."""
+    for name in [str(value or "").strip(), slug]:
+        if not name:
+            continue
+        given = Path(name)
+        if given.suffix and (CTF_IMG_DIR / name).is_file():
+            return name
+        stem = given.stem if given.suffix else name
+        if CTF_IMG_DIR.is_dir():
+            for f in sorted(CTF_IMG_DIR.iterdir()):
+                if (f.is_file() and f.suffix.lower() in MACHINE_IMG_EXTS
+                        and f.stem.lower() == stem.lower()):
+                    return f.name
+    return ""
+
+
+def load_ctf_challenge(path: Path, category: str, event: dict,
+                       md: markdown.Markdown) -> dict:
+    raw = path.read_text(encoding="utf-8")
+    meta, body = parse_frontmatter(raw)
+
+    title = str(meta.get("title") or path.stem)
+    slug = slugify(meta.get("slug") or path.stem)
+
+    # Categories: `categories: [a, b]` (list/comma string) or single `category`,
+    # falling back to the folder name. First one is the primary (used for grouping).
+    raw_cats = meta.get("categories")
+    if raw_cats is None:
+        raw_cats = [meta.get("category") or category or "Misc"]
+    elif isinstance(raw_cats, str):
+        raw_cats = [c.strip() for c in raw_cats.split(",") if c.strip()]
+    categories, seen = [], set()
+    for c in raw_cats:
+        cc = canon_category(c)
+        if cc and cc.lower() not in seen:
+            seen.add(cc.lower())
+            categories.append(cc)
+    if not categories:
+        categories = [canon_category(category or "Misc")]
+    primary = categories[0]
+
+    # Authors: `authors: [a, b]` or single `author`.
+    raw_auth = meta.get("authors")
+    if raw_auth is None:
+        a = meta.get("author")
+        raw_auth = [a] if a else []
+    elif isinstance(raw_auth, str):
+        raw_auth = [x.strip() for x in raw_auth.split(",") if x.strip()]
+    authors = [str(a).strip() for a in raw_auth if str(a).strip()]
+
+    body_html, toc = render_markdown(md, body)
+    plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body_html)).strip()
+    words = len(re.findall(r"\w+", plain))
+
+    # A challenge is "solved" (gets its own page + link) when it has a body,
+    # unless explicitly marked otherwise. Unsolved stubs render greyed-out.
+    solved = bool(body.strip())
+    if meta.get("solved") is False or str(meta.get("status", "")).lower() == "unsolved":
+        solved = False
+    if meta.get("draft"):
+        solved = False
+
+    desc = str(meta.get("description") or "")
+    if not desc and plain:
+        ex = plain
+        if ex.lower().startswith("description "):
+            ex = ex[len("description "):]
+        desc = (ex[:157].rsplit(" ", 1)[0] + "…") if len(ex) > 160 else ex
+
+    ev_slug = event["slug"]
+    return {
+        "collection": "ctf",
+        "collection_title": "CTF Walkthroughs",
+        "collection_singular": "Challenge",
+        "title": title,
+        "slug": slug,
+        "url": f"ctf/{ev_slug}/{slug}/",
+        "date": event["date"],
+        "updated": parse_date(meta.get("updated")),
+        "tags": tag_dicts(categories + (meta.get("tags") or [])),
+        "description": desc,
+        "category": primary,
+        "categories": categories,
+        "authors": authors,
+        "points": meta.get("points") or "",
+        "difficulty": str(meta.get("difficulty") or ""),
+        "solved": solved,
+        "event_slug": ev_slug,
+        "event_title": event["title"],
+        "event_url": event["url"],
+        "html": body_html,
+        "toc": toc,
+        "text": plain[:1200],
+        "image": "",
+        "platform": "",
+        "os": "",
+        "logo_path": f"static/ctf/{event['logo']}" if event["logo"] else "",
+        "og_image": f"og/ctf-{ev_slug}-{slug}.png",
+        "words": words,
+        "reading_time": max(1, round(words / 200)),
+        "featured": False,
+        "draft": False,
+    }
+
+
+def load_ctf(md: markdown.Markdown) -> tuple[list[dict], list[dict]]:
+    """Load CTF events and their challenges. Returns (events, solved_docs)."""
+    events: list[dict] = []
+    if not CTF_DIR.is_dir():
+        return [], []
+
+    for event_dir in sorted(CTF_DIR.iterdir()):
+        if not event_dir.is_dir():
+            continue
+        meta, body = {}, ""
+        event_md = event_dir / "event.md"
+        if event_md.is_file():
+            meta, body = parse_frontmatter(event_md.read_text(encoding="utf-8"))
+
+        ev_slug = slugify(meta.get("slug") or event_dir.name)
+        intro_html = render_markdown(md, body)[0] if body.strip() else ""
+        event = {
+            "slug": ev_slug,
+            "title": str(meta.get("title") or event_dir.name),
+            "date": parse_date(meta.get("date")),
+            "date_end": parse_date(meta.get("date_end")),
+            "logo": resolve_ctf_logo(meta.get("logo"), ev_slug),
+            "description": str(meta.get("description") or ""),
+            "tags": tag_dicts(meta.get("tags")),
+            "place": str(meta.get("place") or ""),
+            "team": str(meta.get("team") or ""),
+            "url_ext": str(meta.get("url") or ""),
+            "intro_html": intro_html,
+            "url": f"ctf/{ev_slug}/",
+            "challenges": [],
+        }
+
+        chals: list[dict] = []
+        for sub in sorted(event_dir.iterdir()):
+            if sub.is_dir():
+                for p in sorted(sub.glob("*.md")):
+                    chals.append(load_ctf_challenge(p, sub.name, event, md))
+        for p in sorted(event_dir.glob("*.md")):
+            if p.name.lower() != "event.md":
+                chals.append(load_ctf_challenge(p, "", event, md))
+
+        chals.sort(key=lambda c: (CATEGORY_ORDER.get(c["category"].lower(), 90),
+                                  c["category"].lower(),
+                                  DIFFICULTY_ORDER.get(c["difficulty"].lower(), 50),
+                                  natural_key(c["title"])))
+        event["challenges"] = chals
+        events.append(event)
+
+    events.sort(key=lambda ev: (ev["date"] or date.min, ev["title"]), reverse=True)
+    solved_docs = [c for ev in events for c in ev["challenges"] if c["solved"]]
+    return events, solved_docs
 
 
 # --------------------------------------------------------------------------
@@ -399,7 +631,7 @@ def doc_card(doc: dict, root: str) -> str:
 def doc_row(doc: dict, root: str) -> str:
     """A compact one-line entry, used on the home page and tag pages."""
     return f"""<li class="row">
-  <time class="row-date" datetime="{iso_date(doc['date'])}">{human_date(doc['date']) or '—'}</time>
+  <time class="row-date" datetime="{iso_date(doc['date'])}">{human_date(doc['date']) or '-'}</time>
   <div class="row-body">
     <a class="row-title" href="{root}{doc['url']}">{e(doc['title'])}</a>
     <span class="row-kind">{e(doc['collection_singular'])}</span>
@@ -422,10 +654,12 @@ def section_header(title: str, blurb: str = "", count: str = "") -> str:
 # --------------------------------------------------------------------------
 
 class Site:
-    def __init__(self, config: dict, docs: list[dict], tags: dict):
+    def __init__(self, config: dict, docs: list[dict], tags: dict,
+                 ctf_events: list[dict] | None = None):
         self.config = config
         self.docs = docs
         self.tags = tags
+        self.ctf_events = ctf_events or []
         self.base = (TEMPLATES / "base.html").read_text(encoding="utf-8")
         self.pages_written = 0
         self.base_url = config.get("url", "").rstrip("/")
@@ -541,6 +775,7 @@ class Site:
         root = ""
         writeups = [d for d in self.docs if d["collection"] == "writeups"]
         posts = [d for d in self.docs if d["collection"] in ("blog", "cheatsheets")]
+        ctf = [d for d in self.docs if d["collection"] == "ctf"]
 
         top_tags = sorted(self.tags.values(), key=lambda t: (-t["count"], t["slug"]))[:14]
         tag_cloud = "".join(
@@ -551,6 +786,7 @@ class Site:
 
         stats = [
             ("Writeups", len(writeups)),
+            ("CTF solves", len(ctf)),
             ("Posts", len([d for d in self.docs if d["collection"] == "blog"])),
             ("Cheatsheets", len([d for d in self.docs if d["collection"] == "cheatsheets"])),
             ("Tags", len(self.tags)),
@@ -589,9 +825,10 @@ class Site:
   </div>
 </section>
 
-<section class="stats">{stats_html}</section>
+<section class="stats" style="--stat-cols:{len(stats)}">{stats_html}</section>
 
 {block("Latest writeups", writeups[:cfg.get('home_writeup_count', 5)], "writeups/", "All writeups")}
+{block("Latest CTF walkthroughs", ctf[:cfg.get('home_ctf_count', 4)], "ctf/", "All CTFs")}
 {block("Recent writing", posts[:cfg.get('home_post_count', 4)], "blog/", "All posts")}
 
 <section class="home-block">
@@ -653,7 +890,7 @@ class Site:
             listing = f'<div class="cards" id="doc-list">{cards}</div>'
             empty = '<p class="empty" data-empty hidden>No matches. Try a different filter.</p>'
         else:
-            listing = ('<p class="empty">Nothing here yet — drop a Markdown file in '
+            listing = ('<p class="empty">Nothing here yet - drop a Markdown file in '
                        f'<code>content/{col["dir"]}/</code> and rebuild.</p>')
             empty = ""
 
@@ -767,7 +1004,7 @@ class Site:
             "image": self.og_url_for(doc["og_image"]),
             "author": self.person_ld(),
             "publisher": self.person_ld(),
-            "description": doc["description"] or f"{col['singular']} — {doc['title']}",
+            "description": doc["description"] or f"{col['singular']} - {doc['title']}",
         }
         if doc["date"]:
             ld["datePublished"] = iso_date(doc["date"])
@@ -777,7 +1014,7 @@ class Site:
             ld["keywords"] = ", ".join(t["name"] for t in doc["tags"])
 
         self.write(doc["url"], doc["title"], content,
-                   description=doc["description"] or f"{col['singular']} — {doc['title']}",
+                   description=doc["description"] or f"{col['singular']} - {doc['title']}",
                    current=col["dir"], body_class="page-doc",
                    og_image=doc["og_image"], og_type="article",
                    head_extra=self.jsonld(ld))
@@ -851,14 +1088,16 @@ class Site:
             docs = sorted(tag["docs"],
                           key=lambda d: (d["date"] or date.min, d["title"]), reverse=True)
             sections = []
-            for col in COLLECTIONS:
-                group = [d for d in docs if d["collection"] == col["key"]]
+            group_specs = ([(c["key"], c["title"]) for c in COLLECTIONS]
+                           + [("ctf", "CTF Walkthroughs")])
+            for key, group_title in group_specs:
+                group = [d for d in docs if d["collection"] == key]
                 if not group:
                     continue
                 rows = "".join(doc_row(d, root) for d in group)
                 sections.append(
                     f'<section class="home-block"><div class="block-head">'
-                    f'<h2 class="block-title">{e(col["title"])}'
+                    f'<h2 class="block-title">{e(group_title)}'
                     f'<span class="count">{len(group)}</span></h2></div>'
                     f'<ul class="rows">{rows}</ul></section>'
                 )
@@ -919,6 +1158,245 @@ class Site:
                    description=str(meta.get("description") or ""),
                    current=current, body_class=body_class, head_extra=head_extra)
 
+    # -- CTF walkthroughs --------------------------------------------------
+
+    @staticmethod
+    def _initials(title: str) -> str:
+        for tok in re.split(r"\s+", str(title)):
+            letters = re.sub(r"[^A-Za-z0-9]", "", tok)
+            if re.search(r"[A-Za-z]", letters):
+                return letters[:4].upper()
+        return (str(title)[:2] or "CTF").upper()
+
+    def ctf_logo_html(self, event: dict, root: str, cls: str, size: int) -> str:
+        if event["logo"]:
+            return (f'<img class="{cls}" src="{root}static/ctf/{e(event["logo"])}" '
+                    f'alt="{e(event["title"])} logo" width="{size}" height="{size}" '
+                    f'loading="lazy">')
+        return (f'<span class="{cls} ctf-badge" aria-hidden="true">'
+                f'{e(self._initials(event["title"]))}</span>')
+
+    def _challenge_item(self, chal: dict, root: str) -> str:
+        # The challenge is listed under its primary category (section heading),
+        # so only show its *other* categories as pills to avoid duplication.
+        secondary = [c for c in chal["categories"] if c != chal["category"]]
+        cat_pills = "".join(f'<span class="chal-cat">{e(c)}</span>' for c in secondary)
+        author = (f'<span class="chal-author">by {e(", ".join(chal["authors"]))}</span>'
+                  if chal["authors"] else "")
+
+        badges = list(cat_pills and [cat_pills] or [])
+        if chal["difficulty"]:
+            badges.append(difficulty_badge(chal["difficulty"]))
+        if chal["points"] not in ("", None):
+            badges.append(f'<span class="chal-points">{e(str(chal["points"]))} pts</span>')
+        badges_html = f'<div class="chal-badges">{"".join(badges)}</div>' if badges else ""
+
+        if chal["solved"]:
+            name = f'<a class="chal-name" href="{root}{chal["url"]}">{e(chal["title"])}</a>'
+            lock = ""
+        else:
+            name = f'<span class="chal-name">{e(chal["title"])}</span>'
+            lock = '<span class="chal-lock">unsolved</span>'
+        cls = "chal" if chal["solved"] else "chal is-locked"
+        return f"""<li class="{cls}">
+  <div class="chal-left">{name}{lock}{author}</div>
+  {badges_html}
+</li>"""
+
+    def build_ctf_index(self) -> None:
+        root = "../"
+        events = self.ctf_events
+        if not events:
+            content = (section_header("CTF Walkthroughs", CTF_BLURB)
+                       + '<p class="empty">No CTFs here yet.</p>')
+            self.write("ctf/", "CTF Walkthroughs", content,
+                       description=CTF_BLURB, current="ctf")
+            return
+
+        cards = []
+        for ev in events:
+            total = len(ev["challenges"])
+            solved = sum(1 for c in ev["challenges"] if c["solved"])
+            cats = sorted({c["category"] for c in ev["challenges"]},
+                          key=lambda x: (CATEGORY_ORDER.get(x.lower(), 90), x.lower()))
+            cat_pills = "".join(f'<span class="pill pill-plain">{e(c)}</span>' for c in cats)
+
+            meta_bits = []
+            if ev["date"]:
+                meta_bits.append(
+                    f'<time datetime="{iso_date(ev["date"])}">'
+                    f'{human_date_range(ev["date"], ev["date_end"])}</time>')
+            meta_bits.append(f"{solved} solved" + (f" / {total}" if total != solved else ""))
+            if ev["place"]:
+                meta_bits.append(e(ev["place"]))
+            meta = '<span class="dot">·</span>'.join(meta_bits)
+            desc = f'<p class="card-desc">{e(ev["description"])}</p>' if ev["description"] else ""
+
+            cards.append(f"""<article class="card ctf-card">
+  <div class="ctf-card-head">
+    {self.ctf_logo_html(ev, root, "ctf-logo", 56)}
+    <div class="ctf-card-titles">
+      <h3 class="card-title"><a href="{root}{ev['url']}">{e(ev['title'])}</a></h3>
+      <div class="card-meta">{meta}</div>
+    </div>
+  </div>
+  {desc}
+  <div class="pills">{cat_pills}</div>
+</article>""")
+
+        listing = f'<div class="cards">{"".join(cards)}</div>'
+        content = section_header("CTF Walkthroughs", CTF_BLURB, str(len(events))) + listing
+        self.write("ctf/", "CTF Walkthroughs", content,
+                   description=CTF_BLURB, current="ctf")
+
+    def build_ctf_event(self, event: dict) -> None:
+        root = "../../"
+        total = len(event["challenges"])
+        solved = sum(1 for c in event["challenges"] if c["solved"])
+
+        # Group challenges under their primary category, in canonical order.
+        # Each row still carries its full category pills.
+        groups: dict[str, list] = {}
+        for c in event["challenges"]:
+            groups.setdefault(c["category"], []).append(c)
+        ordered = sorted(groups, key=lambda x: (CATEGORY_ORDER.get(x.lower(), 90), x.lower()))
+        sections = ""
+        for cat in ordered:
+            items = groups[cat]
+            rows = "".join(self._challenge_item(c, root) for c in items)
+            solved_n = sum(1 for c in items if c["solved"])
+            count = f"{solved_n}/{len(items)}" if solved_n != len(items) else f"{len(items)}"
+            sections += (f'<section class="ctf-cat"><h2 class="block-title">{e(cat)}'
+                         f'<span class="count">{count}</span></h2>'
+                         f'<ul class="chal-list">{rows}</ul></section>')
+
+        meta_bits = []
+        if event["date"]:
+            meta_bits.append(
+                f'<time datetime="{iso_date(event["date"])}">'
+                f'{human_date_range(event["date"], event["date_end"])}</time>')
+        meta_bits.append(f"{solved} of {total} solved")
+        meta = '<span class="dot">·</span>'.join(meta_bits)
+
+        facts = []
+        for label, value in (("Place", event["place"]), ("Team", event["team"])):
+            if value:
+                facts.append(f'<div class="fact"><dt>{label}</dt><dd>{e(value)}</dd></div>')
+        if event["url_ext"]:
+            facts.append('<div class="fact"><dt>Event</dt><dd>'
+                         f'<a href="{e(event["url_ext"])}" rel="noopener" target="_blank">'
+                         'Official site ↗</a></dd></div>')
+        facts_html = f'<dl class="facts">{"".join(facts)}</dl>' if facts else ""
+        intro = f'<div class="prose ctf-intro">{event["intro_html"]}</div>' if event["intro_html"] else ""
+
+        content = f"""<nav class="crumbs"><a href="{root}ctf/">CTF Walkthroughs</a>
+  <span aria-hidden="true">/</span> <span>{e(event['title'])}</span></nav>
+<header class="doc-head ctf-event-head">
+  <div class="doc-head-top">
+    {self.ctf_logo_html(event, root, "ctf-hero-logo", 84)}
+    <div class="doc-head-titles">
+      <h1 class="doc-title">{e(event['title'])}</h1>
+      <div class="doc-meta">{meta}</div>
+    </div>
+  </div>
+  {f'<p class="lede">{e(event["description"])}</p>' if event["description"] else ""}
+  {tag_pills(event['tags'], root)}
+  {facts_html}
+</header>
+{intro}
+{sections}"""
+        self.write(event["url"], event["title"], content,
+                   description=event["description"] or f"CTF walkthroughs - {event['title']}",
+                   current="ctf", body_class="page-doc")
+
+    def build_ctf_challenge(self, chal: dict, event: dict) -> None:
+        root = "../" * depth_of(chal["url"])
+
+        cats_str = ", ".join(chal["categories"])
+        authors_str = ", ".join(chal["authors"])
+
+        meta_bits = [e(cats_str)]
+        if chal["points"] not in ("", None):
+            meta_bits.append(f'{e(str(chal["points"]))} pts')
+        meta_bits.append(f'{chal["reading_time"]} min read')
+        meta_html = '<span class="dot">·</span>'.join(meta_bits)
+
+        cat_label = "Categories" if len(chal["categories"]) > 1 else "Category"
+        facts = [f'<div class="fact"><dt>{cat_label}</dt><dd>{e(cats_str)}</dd></div>']
+        if chal["difficulty"]:
+            facts.append(f'<div class="fact"><dt>Difficulty</dt><dd>{e(chal["difficulty"])}</dd></div>')
+        if authors_str:
+            auth_label = "Authors" if len(chal["authors"]) > 1 else "Author"
+            facts.append(f'<div class="fact"><dt>{auth_label}</dt><dd>{e(authors_str)}</dd></div>')
+        if chal["points"] not in ("", None):
+            facts.append(f'<div class="fact"><dt>Points</dt><dd>{e(str(chal["points"]))}</dd></div>')
+        facts.append('<div class="fact"><dt>CTF</dt><dd>'
+                     f'<a href="{root}{event["url"]}">{e(event["title"])}</a></dd></div>')
+        facts_html = f'<dl class="facts">{"".join(facts)}</dl>'
+
+        toc_html = ""
+        if chal["toc"] and chal["toc"].count("<li") >= 3:
+            toc_html = (f'<aside class="toc"><p class="toc-title">On this page</p>'
+                        f'{chal["toc"]}</aside>')
+
+        # Prev / next within the event's solved challenges.
+        sibs = [c for c in event["challenges"] if c["solved"]]
+        pos = next((i for i, c in enumerate(sibs) if c["url"] == chal["url"]), 0)
+        parts = []
+        prev_c = sibs[pos - 1] if pos > 0 else None
+        next_c = sibs[pos + 1] if pos + 1 < len(sibs) else None
+        if prev_c:
+            parts.append(f'<a class="pagenav-item" href="{root}{prev_c["url"]}">'
+                         f'<span class="pagenav-label">← Previous</span>'
+                         f'<span class="pagenav-title">{e(prev_c["title"])}</span></a>')
+        else:
+            parts.append('<span class="pagenav-item pagenav-empty"></span>')
+        if next_c:
+            parts.append(f'<a class="pagenav-item pagenav-next" href="{root}{next_c["url"]}">'
+                         f'<span class="pagenav-label">Next →</span>'
+                         f'<span class="pagenav-title">{e(next_c["title"])}</span></a>')
+        else:
+            parts.append('<span class="pagenav-item pagenav-empty"></span>')
+        pagenav = f'<nav class="pagenav">{"".join(parts)}</nav>'
+
+        content = f"""<article class="doc">
+  <nav class="crumbs"><a href="{root}ctf/">CTF Walkthroughs</a>
+    <span aria-hidden="true">/</span> <a href="{root}{event['url']}">{e(event['title'])}</a>
+    <span aria-hidden="true">/</span> <span>{e(chal['title'])}</span></nav>
+  <header class="doc-head">
+    <h1 class="doc-title">{e(chal['title'])}{difficulty_badge(chal['difficulty'])}</h1>
+    <div class="doc-meta">{meta_html}</div>
+    {tag_pills(chal['tags'], root)}
+    {facts_html}
+  </header>
+  {toc_html}
+  <div class="prose">{chal['html']}</div>
+</article>
+{pagenav}"""
+
+        ld = {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": chal["title"],
+            "url": self.canonical_for(chal["url"]),
+            "mainEntityOfPage": self.canonical_for(chal["url"]),
+            "image": self.og_url_for(chal["og_image"]),
+            "author": self.person_ld(),
+            "publisher": self.person_ld(),
+            "description": chal["description"] or f"CTF walkthrough - {chal['title']}",
+            "isPartOf": {"@type": "CreativeWork", "name": event["title"]},
+        }
+        if chal["date"]:
+            ld["datePublished"] = iso_date(chal["date"])
+        if chal["tags"]:
+            ld["keywords"] = ", ".join(t["name"] for t in chal["tags"])
+
+        self.write(chal["url"], chal["title"], content,
+                   description=chal["description"] or f"CTF walkthrough - {chal['title']}",
+                   current="ctf", body_class="page-doc",
+                   og_image=chal["og_image"], og_type="article",
+                   head_extra=self.jsonld(ld))
+
     def build_404(self) -> None:
         content = """<section class="hero hero-404">
   <p class="hero-kicker">404</p>
@@ -955,6 +1433,9 @@ class Site:
     def build_sitemap(self) -> None:
         base = self.config.get("url", "").rstrip("/")
         urls = [""] + [f"{c['dir']}/" for c in COLLECTIONS] + ["tags/", "resume/"]
+        if self.ctf_events:
+            urls.append("ctf/")
+            urls += [ev["url"] for ev in self.ctf_events]
         urls += [d["url"] for d in self.docs]
         urls += [t["url"] for t in self.tags.values()]
         entries = "".join(
@@ -994,17 +1475,16 @@ class Site:
             eyebrow=cfg.get("tagline", "").upper(),
             site_short=short, site_url=site)
         if not ok:
-            print("  ! Pillow unavailable — skipping OG images (using favicon fallback)")
+            print("  ! Pillow unavailable - skipping OG images (using favicon fallback)")
             return
         made = 1
         for d in self.docs:
-            logo = f"static/machines/{d['image']}" if d["image"] else ""
             ogimage.generate_card(
                 DIST / d["og_image"], ROOT,
                 title=d["title"], kind=d["collection_singular"],
                 date_str=human_date(d["date"]),
                 tags=[t["name"] for t in d["tags"]],
-                difficulty=d["difficulty"], logo_path=logo,
+                difficulty=d["difficulty"], logo_path=d.get("logo_path", ""),
                 site_short=short, site_url=site)
             made += 1
         print(f"  {made} social cards → {DIST / 'og'}")
@@ -1053,7 +1533,7 @@ def copy_static() -> None:
     css_dir.mkdir(parents=True, exist_ok=True)
     formatter = HtmlFormatter(style="one-dark")
     (css_dir / "syntax.css").write_text(
-        "/* Generated by build.py — do not edit; change the Pygments style instead. */\n"
+        "/* Generated by build.py - do not edit; change the Pygments style instead. */\n"
         + formatter.get_style_defs(".codehilite"),
         encoding="utf-8",
     )
@@ -1087,15 +1567,27 @@ def main() -> int:
     md = make_markdown()
     print("Loading content…")
     docs = load_documents(md, include_drafts)
-    tags = build_tag_index(docs)
+    ctf_events, ctf_docs = load_ctf(md)
 
-    site = Site(config, docs, tags)
+    # CTF challenges join the shared index so tags, search and the feed include
+    # them, but they render through their own builders (not build_collection).
+    all_docs = docs + ctf_docs
+    all_docs.sort(key=lambda d: (d["date"] or date.min, d["title"]), reverse=True)
+    tags = build_tag_index(all_docs)
+
+    site = Site(config, all_docs, tags, ctf_events=ctf_events)
     print("Rendering pages…")
     site.build_home()
     for col in COLLECTIONS:
         site.build_collection(col)
     for i, doc in enumerate(docs):
         site.build_doc(doc, i)
+    site.build_ctf_index()
+    for ev in ctf_events:
+        site.build_ctf_event(ev)
+        for chal in ev["challenges"]:
+            if chal["solved"]:
+                site.build_ctf_challenge(chal, ev)
     site.build_tags_index()
     site.build_tag_pages()
     site.build_markdown_page(CONTENT / "pages" / "resume.md", "resume/", md, "resume")
@@ -1107,7 +1599,8 @@ def main() -> int:
     print("Rendering social cards…")
     site.build_og_images()
 
-    print(f"\n  {len(docs)} documents · {len(tags)} tags · "
+    print(f"\n  {len(docs)} documents · {len(ctf_docs)} CTF walkthroughs · "
+          f"{len(ctf_events)} CTFs · {len(tags)} tags · "
           f"{site.pages_written} pages → {DIST}")
     return 0
 

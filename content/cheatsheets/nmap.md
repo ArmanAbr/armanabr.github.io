@@ -4,7 +4,7 @@ slug: nmap
 date: 2026-07-20
 updated: 2026-08-10
 tags: [Nmap, Enumeration, Scanning, Recon, Networking]
-description: The Nmap flags and scan recipes I reach for on every engagement — from the first sweep to targeted script scans.
+description: The Nmap flags and scan recipes I reach for on every engagement - from the first sweep to targeted script scans.
 ---
 
 The commands here are ordered the way I actually run them: **fast and wide
@@ -35,7 +35,7 @@ nmap -Pn <TARGET>                   # skip discovery, treat host as up
 |-------|------------------------------------|--------------------------------|
 | `-sS` | SYN "stealth" scan (default root)  | Fast, half-open                |
 | `-sT` | Full TCP connect                   | Used when not root             |
-| `-sU` | UDP scan                           | Slow — scope it to key ports   |
+| `-sU` | UDP scan                           | Slow - scope it to key ports   |
 | `-sV` | Service/version detection          | Maps versions to CVEs          |
 | `-O`  | OS detection                       | Needs root                     |
 | `-sC` | Default NSE scripts                | Same as `--script=default`     |
@@ -52,7 +52,7 @@ nmap -Pn <TARGET>                   # skip discovery, treat host as up
     Always write output with `-oA nmap/scan` (or `-oN`). You will want to grep
     old scans later, and re-scanning wastes time and makes noise.
 
-## UDP — the top ports only
+## UDP - the top ports only
 
 ```bash
 # UDP is slow; scan the usual suspects rather than all 65535

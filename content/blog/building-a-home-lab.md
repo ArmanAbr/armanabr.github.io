@@ -3,11 +3,11 @@ title: Building a Home Lab That Actually Teaches You Something
 slug: building-a-home-lab
 date: 2026-07-28
 tags: [Home Lab, Active Directory, Methodology, Windows, Learning]
-description: A practical, low-cost home lab layout for practising Active Directory and web attacks — what to install, how to segment it, and what to break first.
+description: A practical, low-cost home lab layout for practising Active Directory and web attacks - what to install, how to segment it, and what to break first.
 ---
 
 Boxes on HackTheBox teach you *techniques*. A home lab teaches you *why they
-work* — because you built the vulnerable thing yourself and watched it fall
+work* - because you built the vulnerable thing yourself and watched it fall
 over. Here's the setup I actually use.
 
 ## The minimum viable lab
@@ -15,9 +15,9 @@ over. Here's the setup I actually use.
 You do not need a rack. Three VMs on a single laptop with 16 GB of RAM is
 enough to start:
 
-1. **Attacker** — Kali or Parrot.
-2. **Domain Controller** — Windows Server 2019 evaluation (180-day free).
-3. **Domain-joined workstation** — Windows 10/11 evaluation.
+1. **Attacker** - Kali or Parrot.
+2. **Domain Controller** - Windows Server 2019 evaluation (180-day free).
+3. **Domain-joined workstation** - Windows 10/11 evaluation.
 
 Put them all on a **host-only / internal network** so nothing you do leaks onto
 your real LAN.
@@ -43,7 +43,7 @@ moving on:
 
 - A **Kerberoastable** service account (set an SPN on a user).
 - An **AS-REP roastable** account (disable Kerberos pre-auth on a user).
-- A juicy **ACL** — give a low-priv user `GenericAll` over a group.
+- A juicy **ACL** - give a low-priv user `GenericAll` over a group.
 - A password reused across the workstation local admin and a domain account.
 
 ## A first afternoon
@@ -77,4 +77,4 @@ Public boxes hide the defender's view. In your own lab you can:
 - Break things with zero fear of a shared environment or a rate limit.
 
 Grinding boxes makes you faster. Building the lab makes you *understand*. Do
-both — but if you only have time for one this month, build the lab.
+both - but if you only have time for one this month, build the lab.
