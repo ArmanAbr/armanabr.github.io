@@ -40,9 +40,9 @@ PORT     STATE SERVICE VERSION
 ```
 
 **Key Observations:**
-- Port 80: Apache on **Windows** with **PHP** — unusual combo, suggests a WAMP/XAMPP stack
-- Port 5985: **WinRM** (Windows Remote Management) — this is your post-exploitation access vector
-- Only 2 ports open — the attack surface is small and web-focused
+- Port 80: Apache on **Windows** with **PHP** - unusual combo, suggests a WAMP/XAMPP stack
+- Port 5985: **WinRM** (Windows Remote Management) - this is your post-exploitation access vector
+- Only 2 ports open - the attack surface is small and web-focused
 ## Hosts File
 
 The website uses a virtual host. Add it to `/etc/hosts` **immediately**:
@@ -166,7 +166,7 @@ cat user.txt
 ---
 # Privilege Escalation
 
-**N/A — Direct Administrative Access**
+**N/A - Direct Administrative Access**
 
 No privilege escalation was required on this machine. The cracked NTLM hash belonged to the **Administrator** account, which provided direct administrative access via WinRM. On harder machines, privilege escalation would be a separate, multi-step phase involving service exploitation, token impersonation, kernel exploits, or misconfigured permissions.
 
@@ -183,7 +183,7 @@ No privilege escalation was required on this machine. The cracked NTLM hash belo
 
 ---
 # References
-- [Responder — GitHub](https://github.com/lgandx/Responder)
-- [Evil-WinRM — GitHub](https://github.com/Hackplayers/evil-winrm)
-- [TCM Security — SMB Relay Attacks](https://tcm-sec.com/smb-relay-attacks-and-how-to-prevent-them/)
-- [HackTheBox — Responder](https://app.hackthebox.com/machines/Responder)
+- [Responder - GitHub](https://github.com/lgandx/Responder)
+- [Evil-WinRM - GitHub](https://github.com/Hackplayers/evil-winrm)
+- [TCM Security - SMB Relay Attacks](https://tcm-sec.com/smb-relay-attacks-and-how-to-prevent-them/)
+- [HackTheBox - Responder](https://app.hackthebox.com/machines/Responder)

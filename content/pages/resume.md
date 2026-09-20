@@ -63,7 +63,7 @@ NetExec/CrackMapExec · Hashcat · Wireshark · Ffuf/Gobuster
 ## Internships
 
 ### Junior Cybersecurity Engineer - Hexens
-*June 2024 – August 2025*
+*June 2024 - August 2025*
 
 Spent more then a year learning offensive security through practical labs and real-world tooling:
 
@@ -78,7 +78,7 @@ Spent more then a year learning offensive security through practical labs and re
 - *Penetration Testing: Rooted multiple HackTheBox and TryHackMe machines, documenting full attack chains.*
 
 ### Junior Software Engineer - DST
-*June 2022 – July 2023*
+*June 2022 - July 2023*
 
 Built internal business tools and worked with databases:
 

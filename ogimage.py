@@ -28,7 +28,7 @@ except Exception:                                        # pragma: no cover
 W, H = 1200, 630
 PAD = 80
 
-# Palette — a dark, branded card that looks sharp in any feed regardless of the
+# Palette - a dark, branded card that looks sharp in any feed regardless of the
 # viewer's theme. Kept in sync with the teal accent used across the site.
 BG_TOP = (13, 20, 30)
 BG_BOT = (8, 12, 18)
@@ -40,6 +40,7 @@ FG_DIM = (99, 112, 127)
 LINE = (32, 42, 54)
 
 DIFF_COLORS = {
+    "intro": (56, 189, 248),
     "very easy": (74, 222, 128), "easy": (74, 222, 128),
     "medium": (251, 191, 36), "hard": (248, 113, 113),
     "insane": (167, 139, 250),
@@ -215,7 +216,7 @@ def generate_card(out_path: Path, root: Path, *, title: str, kind: str = "",
         draw.text((PAD, y), eb, font=f, fill=ACCENT)
         y += 46
 
-    # Title — auto-sized so it fits within 2 lines without overflowing.
+    # Title - auto-sized so it fits within 2 lines without overflowing.
     title_font, lines, tsize = _fit(draw, root, "bold", title, 68, 44,
                                     W - 2 * PAD, max_lines=2)
     line_h = int(tsize * 1.24)

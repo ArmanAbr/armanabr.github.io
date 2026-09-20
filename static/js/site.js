@@ -1,4 +1,4 @@
-/* Progressive enhancement only — every page works with JS disabled. */
+/* Progressive enhancement only - every page works with JS disabled. */
 (function () {
   "use strict";
 
