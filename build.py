@@ -1177,10 +1177,10 @@ class Site:
                 f'{e(self._initials(event["title"]))}</span>')
 
     def _challenge_item(self, chal: dict, root: str) -> str:
-        # The challenge is listed under its primary category (section heading),
-        # so only show its *other* categories as pills to avoid duplication.
-        secondary = [c for c in chal["categories"] if c != chal["category"]]
-        cat_pills = "".join(f'<span class="chal-cat">{e(c)}</span>' for c in secondary)
+        # Show every category the challenge belongs to as a pill, so each row
+        # carries its full category set (even under its category section).
+        cat_pills = "".join(f'<span class="chal-cat">{e(c)}</span>'
+                            for c in chal["categories"])
         author = (f'<span class="chal-author">by {e(", ".join(chal["authors"]))}</span>'
                   if chal["authors"] else "")
 
