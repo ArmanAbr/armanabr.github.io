@@ -1,5 +1,5 @@
 ---
-title: HTB · Silentium
+title: Silentium
 slug: htb-silentium
 date: 2026-09-10
 image: silentium
@@ -9,7 +9,13 @@ difficulty: Easy
 points: 585
 tags: [hackthebox, linux, easy, active, gogs, flowise, cve-2025-8110]
 description: "Silentium is an easy Linux machine featuring two vulnerable services: Flowise (AI workflow builder) and Gogs (Git service)."
-featured: true
+path:
+  - Flowise auth bypass (CVE-2025-58434)
+  - RCE via Puppeteer
+  - SSH
+  - Gogs RCE (CVE-2025-8110) over an SSH tunnel
+  - root
+featured: false
 ---
 
 # Overview

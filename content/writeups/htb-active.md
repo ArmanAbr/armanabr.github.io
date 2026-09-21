@@ -1,5 +1,5 @@
 ---
-title: HTB · Active
+title: Active
 slug: htb-active
 date: 2026-08-13
 image: active
@@ -9,6 +9,13 @@ difficulty: Easy
 points: 450
 tags: [hackthebox, windows, easy, retired, active-directory, smbclient, hashcat, smbmap, gpp-decrypt, kerberoast, getuserspns]
 description: Active is a Windows Active Directory machine where initial access is gained by extracting a GPP-encrypted password from an anonymously readable SMB share.
+path:
+  - Anonymous SMB share
+  - GPP cpassword in Groups.xml
+  - SVC_TGS
+  - Kerberoast Administrator
+  - Crack with hashcat
+  - Administrator
 featured: true
 ---
 

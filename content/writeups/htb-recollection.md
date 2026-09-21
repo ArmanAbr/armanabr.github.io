@@ -1,5 +1,5 @@
 ---
-title: HTB Sherlock · Recollection
+title: Recollection
 slug: htb-recollection
 date: 2026-09-20
 image: recollection
@@ -8,7 +8,7 @@ os: Windows
 difficulty: Easy
 points: 535
 tags: [hackthebox, sherlock, windows, easy, retired, dfir, windows-forensics, incident-response, volatility]
-description: A junior member of our security team has been performing research and testing on what we believe to be an old and insecure operating system. We believe it may have been compromised & have managed to retrieve a memory dump of the asset. We want to confirm what actions were carried out by the attacker and if any other assets in our environment might be affected. Please answer the questions below.
+description: Windows 7 memory forensics with Volatility: obfuscated PowerShell, a failed exfiltration attempt and malware named after its own hash.
 featured: true
 ---
 

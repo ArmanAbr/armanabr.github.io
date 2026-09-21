@@ -1,5 +1,5 @@
 ---
-title: HTB · Support
+title: Support
 slug: htb-support
 date: 2026-07-25
 image: support
@@ -8,7 +8,15 @@ os: Windows
 difficulty: Easy
 points: 450
 tags: [hackthebox, windows, retired, reverse-engineering, smbclient, active-directory, crackmapexec, ldapsearch, evil-winrm, dotnet, ldap-injection, bloodhound, dnspy]
-description: This lab focuses on how a File Inclusion vulnerability on a webpage being served on a Windows machine can be exploited to collect the NetNTLMv2 challenge of the user that is running the web server.
+description: Reverse a .NET tool from an open SMB share for LDAP creds, find a password in an LDAP attribute, then abuse GenericAll on the DC with RBCD.
+path:
+  - Anonymous support-tools share
+  - Reverse UserInfo.exe for LDAP creds
+  - Password in the support user's info attribute
+  - WinRM as support
+  - GenericAll on the DC
+  - RBCD
+  - Administrator
 featured: true
 ---
 

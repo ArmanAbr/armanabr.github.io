@@ -1,5 +1,5 @@
 ---
-title: HTB · Access
+title: Access
 slug: htb-access
 date: 2026-08-19
 image: access
@@ -8,8 +8,16 @@ os: Windows
 difficulty: Easy
 points: 450
 tags: [hackthebox, windows, easy, retired, ftp, telnet, nishang, mdbtools]
-description: Access is an easy-difficulty Windows machine on HackTheBox that centers on credential reuse-an anonymously accessible FTP server exposes an Access database and a stored Outlook email, which yield credentials for telnet access, and privilege escalation to SYSTEM is achieved by abusing cached runas/DPAPI credentials stored for the Administrator account.
-featured: true
+description: Anonymous FTP leaks an Access database and a zipped Outlook archive; the creds inside give telnet, and saved runas credentials give Administrator.
+path:
+  - Anonymous FTP
+  - Access database credentials
+  - Password-protected zip
+  - Outlook .pst email
+  - Telnet as security
+  - Saved runas credentials
+  - Administrator
+featured: false
 ---
 
 # Overview

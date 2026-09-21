@@ -1,5 +1,5 @@
 ---
-title: HTB · Bastion
+title: Bastion
 slug: htb-bastion
 date: 2026-08-18
 image: bastion
@@ -8,8 +8,16 @@ os: Windows
 difficulty: Easy
 points: 450
 tags: [hackthebox, windows, easy, retired, smbclient, vhd, mremoteng]
-description: Bastion is an easy-rated Windows machine on Hack The Box that centers on enumerating an exposed SMB share containing a Windows VHD backup file, which can be mounted to extract SAM/SYSTEM hives and dump local password hashes. Privilege escalation then comes from recovering stored credentials in the mRemoteNG configuration, leading to full administrative access.
-featured: true
+description: A guest SMB share holds a Windows VHD backup: mount it, dump SAM hashes for SSH, then decrypt mRemoteNG's saved Administrator password.
+path:
+  - Guest SMB share
+  - VHD backup
+  - SAM + SYSTEM hives
+  - L4mpje's hash
+  - SSH as L4mpje
+  - mRemoteNG saved password
+  - Administrator
+featured: false
 ---
 
 # Reconnaissance

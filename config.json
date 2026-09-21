@@ -1,7 +1,7 @@
 {
   "site_name": "Arman Abrahamyan",
   "site_short": "armcyb",
-  "tagline": "Cybersecurity student · Penetration testing · CTF player",
+  "tagline": "Offensive security · CTF player · Armenia",
   "description": "Offensive-security writeups, research notes and cheatsheets by Arman Abrahamyan - HackTheBox walkthroughs, Active Directory attack paths, web exploitation and privilege escalation.",
   "url": "https://armanabr.github.io",
   "author": "Arman Abrahamyan",
@@ -9,7 +9,7 @@
   "location": "",
   "availability": "Open to penetration testing internships & junior roles",
   "hero_intro": "Arman Abrahamyan",
-  "hero_blurb": "Cybersecurity student focused on offensive security: Active Directory attack paths, web exploitation and privilege escalation. This site is my public notebook - HackTheBox writeups, research posts and the cheatsheets I actually use.",
+  "hero_blurb": "16-year-old offensive security student focused on Active Directory, web exploitation and privilege escalation. I break things on purpose and write down exactly how - HackTheBox writeups, CTF walkthroughs and the cheatsheets I actually use.",
   "social": {
     "github": "https://github.com/ArmanAbr",
     "linkedin": "https://www.linkedin.com/in/armabrahamyan/",
@@ -18,14 +18,85 @@
     "twitter": "https://x.com/aarmcyb"
   },
   "nav": [
-    { "label": "Writeups", "url": "writeups/" },
-    { "label": "CTF", "url": "ctf/" },
-    { "label": "Blog", "url": "blog/" },
-    { "label": "Cheatsheets", "url": "cheatsheets/" },
-    { "label": "Tags", "url": "tags/" },
-    { "label": "Resume", "url": "resume/" }
+    {
+      "label": "Writeups",
+      "url": "writeups/"
+    },
+    {
+      "label": "CTF",
+      "url": "ctf/"
+    },
+    {
+      "label": "Blog",
+      "url": "blog/"
+    },
+    {
+      "label": "Cheatsheets",
+      "url": "cheatsheets/"
+    },
+    {
+      "label": "Resume",
+      "url": "resume/"
+    }
   ],
   "footer_note": "Built from scratch. No trackers, no cookies, no JavaScript frameworks.",
-  "home_writeup_count": 5,
+  "home_writeup_count": 4,
+  "proof": [
+    {
+      "value": "2nd / 209",
+      "label": "Students National Cyber Challenge 2026",
+      "detail": "Prequalification, solo · 10/10 flags · 3 first bloods"
+    },
+    {
+      "value": "ECSC 2026",
+      "label": "Team Armenia",
+      "detail": "European Cybersecurity Challenge · Bochum, Oct 12-16"
+    },
+    {
+      "value": "Hacker",
+      "label": "HackTheBox rank",
+      "detail": "30+ machines · 110+ challenges · level 61",
+      "url": "https://app.hackthebox.com/users/1934320"
+    },
+    {
+      "value": "3 tools",
+      "label": "Open-source security tooling",
+      "detail": "AD attack paths · SSTI exploitation · privesc",
+      "url": "#projects"
+    }
+  ],
+  "projects": [
+    {
+      "name": "AD-Path-Finder",
+      "url": "https://github.com/ArmanAbr/AD-Path-Finder",
+      "summary": "A mini-BloodHound: turns Active Directory rights into a weighted graph and runs Dijkstra from any user to Domain Admin, flagging Kerberoastable, AS-REP and DCSync quick wins.",
+      "stack": [
+        "Python",
+        "ldap3",
+        "impacket",
+        "Graphviz"
+      ]
+    },
+    {
+      "name": "SSTI-Exploiter",
+      "url": "https://github.com/ArmanAbr/SSTI-Exploiter",
+      "summary": "Tells real template evaluation apart from reflection, fingerprints 11 template engines and builds engine-specific RCE payloads. Ships with a vulnerable Flask lab.",
+      "stack": [
+        "Python",
+        "Web",
+        "Flask"
+      ]
+    },
+    {
+      "name": "Sentinel",
+      "url": "https://github.com/ArmanAbr/Sentinel",
+      "summary": "Privilege-escalation engine: an offline GTFOBins/HackTricks rule engine ranks ready-to-run vectors, with an optional LLM layer that re-prioritises and chains findings.",
+      "stack": [
+        "Python",
+        "Linux",
+        "LLM"
+      ]
+    }
+  ],
   "home_post_count": 4
 }

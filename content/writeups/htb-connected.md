@@ -1,5 +1,5 @@
 ---
-title: HTB · Connected
+title: Connected
 slug: htb-connected
 date: 2026-08-11
 image: connected
@@ -8,8 +8,14 @@ os: Linux
 difficulty: Easy
 points: 585
 tags: [hackthebox, linux, easy, active, cve-2025-57819, reverse-shell, sql-injection, freepbx]
-description: FreePBX 16 was exploited through CVE-2025-57819 to gain remote code execution, obtain a shell as the asterisk user, and escalate privileges to root through a misconfigured Incron-triggered service.
-featured: true
+description: FreePBX 16 SQL injection to RCE (CVE-2025-57819) for a shell as asterisk, then an Incron-triggered service for root.
+path:
+  - FreePBX 16
+  - SQL injection to RCE (CVE-2025-57819)
+  - Shell as asterisk
+  - Incron-triggered root service
+  - root
+featured: false
 ---
 
 # Reconnaissance

@@ -68,8 +68,39 @@
     host.appendChild(btn);
   });
 
+  /* ---------- "On this page": highlight the section being read ---------- */
+
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".doc-body .toc a[href^='#']"));
+  if (tocLinks.length) {
+    var byId = {};
+    tocLinks.forEach(function (a) { byId[decodeURIComponent(a.getAttribute("href").slice(1))] = a; });
+    var heads = Array.prototype.slice.call(document.querySelectorAll(".prose h2[id], .prose h3[id], .prose h4[id]"))
+      .filter(function (h) { return byId[h.id]; });
+    var activeLink = null, ticking = false;
+    var mark = function () {
+      ticking = false;
+      // The section being read is the last heading scrolled past the header.
+      var current = null;
+      for (var i = 0; i < heads.length; i++) {
+        if (heads[i].getBoundingClientRect().top < 120) current = heads[i]; else break;
+      }
+      var link = current ? byId[current.id] : null;
+      if (link === activeLink) return;
+      if (activeLink) activeLink.classList.remove("active");
+      if (link) link.classList.add("active");
+      activeLink = link;
+    };
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(mark); }
+    }, { passive: true });
+    mark();
+  }
+
   /* ---------- filter bars (listing pages + tags page) ---------- */
 
+  // Text box + topic chips (all must match) + field chips (any value within a
+  // field, every field must match). Listing pages mirror the state in the URL
+  // (?filter=…&tag=a,b&os=windows) so a filtered view can be linked to.
   document.querySelectorAll(".filter-bar").forEach(function (bar) {
     var selector = bar.getAttribute("data-filter-target");
     if (!selector) return;
@@ -78,58 +109,116 @@
 
     var input = bar.querySelector(".filter-input");
     var reset = bar.querySelector("[data-reset]");
-    var chips = Array.prototype.slice.call(bar.querySelectorAll(".chip[data-tag]"));
+    var tagChips = Array.prototype.slice.call(bar.querySelectorAll(".chip[data-tag]"));
+    var facetChips = Array.prototype.slice.call(bar.querySelectorAll(".chip[data-facet]"));
     var emptyMsg = document.querySelector("[data-empty]");
-    var active = new Set();
+    var syncUrl = bar.hasAttribute("data-sync-url");
+    var activeTags = new Set();
+    var activeFacets = {};
 
     var items = [];
     containers.forEach(function (container) {
       container.querySelectorAll("[data-title], [data-name]").forEach(function (el) {
+        var facets = {};
+        Array.prototype.forEach.call(el.attributes, function (a) {
+          if (a.name.indexOf("data-f-") === 0) facets[a.name.slice(7)] = a.value;
+        });
         items.push({
           el: el,
           text: (el.getAttribute("data-title") || el.getAttribute("data-name") || "") +
                 " " + (el.getAttribute("data-tags") || ""),
-          tags: (el.getAttribute("data-tags") || "").split(/\s+/).filter(Boolean)
+          tags: (el.getAttribute("data-tags") || "").split(/\s+/).filter(Boolean),
+          facets: facets
         });
       });
     });
+
+    function writeUrl(q) {
+      if (!syncUrl || !window.history || !history.replaceState) return;
+      var params = new URLSearchParams();
+      if (q) params.set("filter", q);
+      if (activeTags.size) params.set("tag", Array.from(activeTags).join(","));
+      Object.keys(activeFacets).forEach(function (k) {
+        if (activeFacets[k].size) params.set(k, Array.from(activeFacets[k]).join(","));
+      });
+      var qs = params.toString();
+      history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
+    }
 
     function apply() {
       var q = (input ? input.value : "").trim().toLowerCase();
       var visible = 0;
       items.forEach(function (item) {
-        var matchesText = !q || item.text.indexOf(q) !== -1;
-        var matchesTags = true;
-        active.forEach(function (tag) { if (item.tags.indexOf(tag) === -1) matchesTags = false; });
-        var show = matchesText && matchesTags;
+        var show = !q || item.text.indexOf(q) !== -1;
+        activeTags.forEach(function (tag) { if (item.tags.indexOf(tag) === -1) show = false; });
+        Object.keys(activeFacets).forEach(function (k) {
+          if (activeFacets[k].size && !activeFacets[k].has(item.facets[k])) show = false;
+        });
         item.el.hidden = !show;
         if (show) visible++;
       });
       document.querySelectorAll(".tag-group").forEach(function (group) {
         group.hidden = !group.querySelector("li:not([hidden])");
       });
+      var anyFacet = Object.keys(activeFacets).some(function (k) { return activeFacets[k].size; });
       if (emptyMsg) emptyMsg.hidden = visible !== 0;
-      if (reset) reset.hidden = !q && active.size === 0;
+      if (reset) reset.hidden = !q && activeTags.size === 0 && !anyFacet;
+      writeUrl(q);
     }
 
+    function setTag(chip, on) {
+      var tag = chip.getAttribute("data-tag");
+      if (on) activeTags.add(tag); else activeTags.delete(tag);
+      chip.classList.toggle("on", on);
+      chip.setAttribute("aria-pressed", on ? "true" : "false");
+      // A chosen topic from the folded list stays visible.
+      var more = chip.closest("details");
+      if (on && more) more.open = true;
+    }
+    function setFacet(chip, on) {
+      var k = chip.getAttribute("data-facet"), v = chip.getAttribute("data-value");
+      activeFacets[k] = activeFacets[k] || new Set();
+      if (on) activeFacets[k].add(v); else activeFacets[k].delete(v);
+      chip.classList.toggle("on", on);
+      chip.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    tagChips.forEach(function (chip) {
+      chip.setAttribute("aria-pressed", "false");
+      chip.addEventListener("click", function () {
+        setTag(chip, !activeTags.has(chip.getAttribute("data-tag"))); apply();
+      });
+    });
+    facetChips.forEach(function (chip) {
+      chip.setAttribute("aria-pressed", "false");
+      chip.addEventListener("click", function () {
+        var k = chip.getAttribute("data-facet");
+        setFacet(chip, !(activeFacets[k] && activeFacets[k].has(chip.getAttribute("data-value")))); apply();
+      });
+    });
     if (input) {
       input.addEventListener("input", apply);
       input.addEventListener("keydown", function (ev) { if (ev.key === "Escape") { input.value = ""; apply(); } });
     }
-    chips.forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        var tag = chip.getAttribute("data-tag");
-        if (active.has(tag)) { active.delete(tag); chip.classList.remove("on"); }
-        else { active.add(tag); chip.classList.add("on"); }
-        apply();
-      });
-    });
     if (reset) {
       reset.addEventListener("click", function () {
         if (input) input.value = "";
-        active.clear();
-        chips.forEach(function (c) { c.classList.remove("on"); });
+        tagChips.forEach(function (c) { setTag(c, false); });
+        facetChips.forEach(function (c) { setFacet(c, false); });
         apply();
+      });
+    }
+
+    // Restore state from the URL (also how old /tags/easy/ links land here).
+    if (syncUrl) {
+      var params = new URLSearchParams(location.search);
+      if (input && params.get("filter")) input.value = params.get("filter");
+      (params.get("tag") || "").split(",").filter(Boolean).forEach(function (t) {
+        tagChips.forEach(function (c) { if (c.getAttribute("data-tag") === t) setTag(c, true); });
+      });
+      facetChips.forEach(function (c) {
+        var vals = (params.get(c.getAttribute("data-facet")) || "").split(",");
+        if (vals.indexOf(c.getAttribute("data-value")) !== -1) setFacet(c, true);
       });
     }
     apply();
@@ -151,8 +240,8 @@
     var current = [];
 
     // Resolve the index.json path relative to site root (../ depth from <link>).
-    var cssHref = document.querySelector('link[href$="style.css"]');
-    var base = cssHref ? cssHref.getAttribute("href").replace(/static\/css\/style\.css$/, "") : "";
+    var cssHref = document.querySelector('link[href*="static/css/style.css"]');
+    var base = cssHref ? cssHref.getAttribute("href").replace(/static\/css\/style\.css(\?.*)?$/, "") : "";
 
     function loadIndex() {
       if (index || loading) return;
@@ -180,10 +269,12 @@
 
       var scored = [];
       index.forEach(function (d) {
-        var hay = (d.title + " " + (d.description || "") + " " + (d.tags || []).join(" ") + " " + (d.text || "")).toLowerCase();
+        var heads = (d.headings || []).join(" ").toLowerCase();
+        var hay = (d.title + " " + (d.description || "") + " " + (d.tags || []).join(" ") + " " + heads + " " + (d.text || "")).toLowerCase();
         var score = 0;
         if (d.title.toLowerCase().indexOf(q) !== -1) score += 10;
         if ((d.tags || []).some(function (t) { return t.toLowerCase().indexOf(q) !== -1; })) score += 5;
+        if (heads.indexOf(q) !== -1) score += 3;
         if (hay.indexOf(q) !== -1) score += 1;
         if (score > 0) scored.push({ d: d, score: score });
       });
@@ -234,6 +325,10 @@
         if (nodes[activeIdx]) window.location.href = nodes[activeIdx].getAttribute("href");
       }
     });
+
+    // /?q=term (the search box Google can show for the site) opens search.
+    var initialQ = new URLSearchParams(location.search).get("q");
+    if (initialQ) { open(); input.value = initialQ; run(initialQ); }
 
     document.addEventListener("keydown", function (ev) {
       var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);

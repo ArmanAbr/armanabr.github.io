@@ -1,96 +1,102 @@
 ---
 title: Resume
-description: Cybersecurity student focused on offensive security, penetration testing and Active Directory.
+heading: Arman Abrahamyan
+description: Offensive security student · CTF competitor · Yerevan, Armenia
+pdf: static/Arman_Abrahamyan_Resume.pdf
 ---
 
-I'm a cybersecurity student focused on **offensive security** - penetration
-testing, Active Directory attack paths, web exploitation and privilege
-escalation. I learn by breaking things in the lab and writing up exactly how,
-which is what this site is for.
+[armanabrahamyan8080@gmail.com](mailto:armanabrahamyan8080@gmail.com) ·
+[+374 41 224247](tel:+37441224247) ·
+[linkedin.com/in/armabrahamyan](https://www.linkedin.com/in/armabrahamyan/) ·
+[github.com/ArmanAbr](https://github.com/ArmanAbr) ·
+[armanabr.github.io](https://armanabr.github.io/)
+{: .resume-contact }
 
-> **Looking for:** internships and junior roles in penetration testing, red
-> teaming, or security research. [Get in touch](mailto:armanabrahamyan8080@gmail.com).
+16-year-old offensive security student focused on Active Directory, web
+exploitation and privilege escalation. 2nd of 209 in the national student CTF
+prequalification, selected for Team Armenia at ECSC 2026, and 14 months as an
+offensive security intern at Hexens. Looking for penetration testing
+internships and junior roles.
 
-## Skills
+## Competitions
 
-**Offensive security** - Network & web penetration testing · Active Directory
-attacks (Kerberoasting, AS-REP roasting, ACL/DCSync abuse) · Privilege
-escalation (Linux & Windows) · Post-exploitation
+### 2nd of 209 - Students National Cyber Challenge 2026, Prequalification *Sep 2026*
 
-**Tooling** - Nmap · Burp Suite · Metasploit · BloodHound · Impacket ·
-NetExec/CrackMapExec · Hashcat · Wireshark · Ffuf/Gobuster
+- Individual jeopardy CTF run by ISAA on Hack The Box: 10 challenges across 7
+  categories in one 13-hour session, human-only (no AI assistants or automation).
+- Solved all 10 (Web, Reversing, Pwn, Forensics, AI/ML, Crypto, OSINT) for
+  6,575 points and 3 first bloods.
 
-**Scripting** - Python · Bash · PowerShell
+### Team Armenia - European Cybersecurity Challenge (ECSC) 2026, Bochum *Oct 12-16, 2026*
 
-**Platforms** - HackTheBox · TryHackMe · Self-built Active Directory lab
-
-## Education
-
-### High School *(in progress)*
-*NPUA High School · expected 2028*
-
-
-## Certifications
-
-- *OSCP (in progress).*
+### Students National Cyber Challenge 2026, Final (team) *Oct 24, 2026*
 
 ## Projects
 
-### [Sentinel](https://github.com/ArmanAbr/Sentinel)
+### [AD-Path-Finder](https://github.com/ArmanAbr/AD-Path-Finder) *Python*
 
-- Built a dual-brain privesc engine: a deterministic, offline GTFOBins/HackTricks rule engine that ranks ready-to-run escalation vectors (SUID, sudo, capabilities, dangerous groups, writable system files), with an optional Claude LLM layer that re-prioritizes and combines findings.
-- Includes autopwn, an authorization-gated engagement orchestrator that chains real Kali tools (nmap, feroxbuster, nikto, enum4linux-ng, searchsploit) into a prioritized foothold report.
-- Safety-first design: read-only by default, execution guarded behind explicit authorization flags, graceful degradation with no API key, and 18 offline tests.
+- A mini-BloodHound: maps AD rights (GenericAll, WriteDacl, ForceChangePassword,
+  DCSync) into a weighted graph and runs Dijkstra from any user to Domain Admin,
+  fewest abuse steps first.
+- Flags quick wins (Kerberoastable, AS-REP roastable, unconstrained delegation);
+  live LDAP collection via ldap3/impacket, Graphviz export, 18 offline tests.
 
-### [AD-Path-Finder](https://github.com/ArmanAbr/AD-Path-Finder) 
+### [SSTI-Exploiter](https://github.com/ArmanAbr/SSTI-Exploiter) *Python*
 
-- Rebuilt the core of BloodHound to understand how AD rights become attack edges: maps access masks and extended-right GUIDs (GenericAll, WriteDacl, ForceChangePassword, DCSync) into a weighted directed graph.
-- Runs Dijkstra shortest-path search from any user to Domain Admin, favoring the fewest abuse steps, and flags quick wins (Kerberoastable, AS-REP roastable, unconstrained delegation, DCSync).
-- Clean collector/analyzer split (live LDAP collection via ldap3/impacket → offline analysis), with Graphviz path export and 18 offline tests.
+- Tells real template evaluation apart from reflection with randomized probes
+  across six delimiter families, avoiding the false positives of naive `7*7` checks.
+- Fingerprints 11 template engines and builds engine-specific RCE payloads, with a
+  time-based fallback for blind targets and a vulnerable Flask lab for testing.
 
-### [SSTI-Exploiter](https://github.com/ArmanAbr/SSTI-Exploiter)
+### [Sentinel](https://github.com/ArmanAbr/Sentinel) *Python*
 
-- Built a from-scratch, tplmap-style scanner that distinguishes template evaluation from mere reflection using randomized operands across six delimiter families, eliminating the false positives naïve 7*7 checks produce.
-- Fingerprints 11 template engines (Jinja2, Twig, Freemarker, ERB, EJS, etc.) via differential probes, then builds engine-specific RCE payloads with correct quoting, output carving, and a time-based fallback for blind targets.
-- Ships with a deliberately vulnerable Flask lab and unit tests to demonstrate the full detect → fingerprint → exploit chain safely on localhost.
+- Offline GTFOBins/HackTricks rule engine that ranks ready-to-run privilege
+  escalation vectors, with an optional LLM layer that re-prioritises and chains them.
+- autopwn chains nmap, feroxbuster, nikto, enum4linux-ng and searchsploit into a
+  foothold report; read-only by default, authorization-gated, 18 offline tests.
 
-### Security writeups & notes *(this site)*
-*Ongoing*
+**Also:** [armanabr.github.io](https://armanabr.github.io/) (writeups site on a Python
+static site generator I wrote) · AD-Enum-Toolkit · Pentest-Automation · ESP32-S3
+drone radar (C++)
 
-- Publish detailed, reproducible HackTheBox writeups and technique notes.
-- Built the site's static-site generator and tag system from scratch in Python.
+## Experience
 
-## Internships
+### Offensive Security Intern - Hexens *Jul 2024 - Aug 2025 · Yerevan*
 
-### Junior Cybersecurity Engineer - Hexens
-*June 2024 - August 2025*
+- Web application security: OWASP Top 10 and the PortSwigger Web Security
+  Academy; exploited SQL injection, XSS, LFI/RFI, CSRF, SSRF and IDOR by hand
+  in Burp Suite.
+- Active Directory: LDAP enumeration, BloodHound analysis, credential abuse,
+  lateral movement, token impersonation and ACL abuse.
+- Infrastructure: enumeration and privilege escalation on Linux and Windows
+  hosts; traffic analysis in Wireshark and tcpdump.
+- Scripting: Python, Bash and PowerShell tooling to automate enumeration and
+  parse scan output.
 
-Spent more then a year learning offensive security through practical labs and real-world tooling:
+### Software Engineering Intern - Database and Statistics Technology *Jun 2023 - May 2024 · Remote*
 
-- *Network Security: Traffic analysis with Wireshark and tcpdump; network enumeration and attack simulation with Nmap and Metasploit.*
+- Built internal business tools in VB.NET / .NET Framework.
+- Designed MySQL schemas and wrote reporting and analytics queries.
+- Tested and debugged REST endpoints in Postman; took part in code review and
+  sprint planning.
 
-- *Web Application Security: Completed PortSwigger Academy labs; manually exploited SQL Injection, XSS, LFI, RFI, CSRF, and IDOR using Burp Suite.*
-  
-- *Active Directory: Practiced LDAP enumeration, BloodHound analysis, and Windows privilege escalation including token impersonation and ACL abuse.*
-  
-- *Scripting & Automation: Built enumeration and exploitation scripts in Python, Bash, and PowerShell to automate repetitive tasks, parse data, and streamline penetration testing workflows.*
-  
-- *Penetration Testing: Rooted multiple HackTheBox and TryHackMe machines, documenting full attack chains.*
+## Certifications & practice
 
-### Junior Software Engineer - DST
-*June 2022 - July 2023*
+- **Ethical Hacker** - Cisco Networking Academy, Sep 2026
+- **In progress:** HTB CDSA, then HTB CPTS
+- **HackTheBox:** Hacker rank · 30+ machines · 110+ challenges · level 61
 
-Built internal business tools and worked with databases:
+## Skills
 
-- *Developed internal business tools in VB.NET, streamlining operational workflows.*
-  
-- *Designed relational database schemas and authored complex SQL queries for reporting and analytics.*
-  
-- *Participated in agile ceremonies, peer code reviews, and sprint planning.*
-  
-## Contact
+**Offensive** - Web application testing · Active Directory attacks
+(Kerberoasting, AS-REP roasting, ACL abuse, RBCD, DCSync) · Linux & Windows
+privilege escalation · Memory and log forensics
 
-- **Email** - [armanabrahamyan8080@gmail.com](mailto:armanabrahamyan8080@gmail.com)
-- **LinkedIn** - [linkedin.com/in/armabrahamyan](https://www.linkedin.com/in/armabrahamyan/)
-- **GitHub** - [github.com/ArmanAbr](https://github.com/ArmanAbr)
-- **Twitter / X** - [x.com/aarmcyb](https://x.com/aarmcyb)
+**Tools** - Burp Suite · Nmap · BloodHound · Impacket · NetExec · Evil-WinRM ·
+Metasploit · Hashcat · Volatility · Wireshark · ffuf
+
+**Languages** - Python · Bash · PowerShell · SQL · VB.NET · C++
+
+## Education
+
+### NPUA High School - Mathematics and Computer Science *Sep 2025 - 2028 (expected)*

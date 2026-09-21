@@ -1,5 +1,5 @@
 ---
-title: HTB · Reactor
+title: Reactor
 slug: htb-reactor
 date: 2026-08-07
 image: reactor
@@ -8,8 +8,16 @@ os: Linux
 difficulty: Easy
 points: 585
 tags: [hackthebox, linux, easy, active, cve-2025-55182, reverse-shell, node.js, sqlite3]
-description: Reactor is an easy-rated Linux machine running a Next.js application vulnerable to unauthenticated RCE via a React Server Components deserialization flaw (CVE-2025-55182).
-featured: true
+description: Unauthenticated RCE in a Next.js app (CVE-2025-55182), cracked SQLite hashes for SSH, then a root Node.js process with the inspector enabled.
+path:
+  - Next.js React Server Components RCE (CVE-2025-55182)
+  - Shell as node
+  - User hashes in SQLite
+  - Crack engineer's password
+  - SSH as engineer
+  - Root Node.js process with the inspector enabled
+  - root
+featured: false
 ---
 
 # Reconnaissance

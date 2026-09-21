@@ -1,5 +1,5 @@
 ---
-title: HTB · DevHub
+title: DevHub
 slug: htb-devhub
 date: 2026-08-21
 image: devhub
@@ -8,7 +8,13 @@ os: Linux
 difficulty: Medium
 points: 845
 tags: [hackthebox, linux, medium, active, mcpjam, cve-2026-23744, ps, jupyter, api, chisel, pivoting]
-description: DevHub is a Medium-difficulty Linux machine centered on Model Context Protocol (MCP) tooling. It starts with an unauthenticated RCE in an exposed MCPJam Inspector instance, then chains a leaked Jupyter Lab token (exposed via /proc) and a hardcoded admin API key to dump root's SSH private key.
+description: Unauthenticated RCE in MCPJam Inspector, a Jupyter token leaked through /proc, a chisel pivot and a hardcoded API key that hands over root's SSH key.
+path:
+  - MCPJam Inspector RCE (CVE-2026-23744)
+  - Jupyter Lab token leaked via /proc
+  - Pivot with chisel
+  - Hardcoded admin API key
+  - root's SSH key
 featured: true
 ---
 

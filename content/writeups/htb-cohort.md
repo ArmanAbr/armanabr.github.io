@@ -1,5 +1,5 @@
 ---
-title: HTB · Cohort
+title: Cohort
 slug: htb-cohort
 date: 2026-08-21
 image: cohort
@@ -8,8 +8,15 @@ os: Linux
 difficulty: Easy
 points: 585
 tags: [hackthebox, linux, easy, active, ssrf, cve-2026-39987, websocket, cve-2026-41651, packagekit]
-description: Cohort is a Linux machine on HackTheBox centered on exploiting an exposed web service to gain a foothold, then escalating to root by recovering leaked credentials/keys. Foothold comes from enumerating the application, and privilege escalation abuses a misconfigured recovery/key-management flow.
-featured: true
+description: An SSRF exposes an internal Marimo notebook with an unauthenticated terminal (CVE-2026-39987), then PackageKit's Pack2TheRoot gives root.
+path:
+  - SSRF in the source-URL fetcher
+  - Internal Marimo notebook
+  - Unauthenticated terminal WebSocket (CVE-2026-39987)
+  - Shell as marimo
+  - PackageKit Pack2TheRoot (CVE-2026-41651)
+  - root
+featured: false
 ---
 
 # Reconnaissance

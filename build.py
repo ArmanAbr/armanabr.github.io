@@ -46,8 +46,8 @@ def _build_version() -> str:
     """Short hash of the files that determine the OG cards + meta, used to
     version OG image URLs so social caches refetch when the card changes."""
     h = hashlib.md5()
-    for rel in ("config.json", "ogimage.py",
-                "static/css/style.css", "templates/base.html"):
+    for rel in ("config.json", "ogimage.py", "static/css/style.css",
+                "static/js/site.js", "templates/base.html"):
         fp = ROOT / rel
         if fp.exists():
             h.update(fp.read_bytes())
@@ -116,6 +116,51 @@ CATEGORY_DISPLAY = {
     "osint": "OSINT", "hardware": "Hardware", "mobile": "Mobile",
     "blockchain": "Blockchain",
 }
+
+
+# Tags describe techniques and topics. Facts that have their own frontmatter
+# field (difficulty, box status, platform) or add nothing (a year) are pulled
+# out of the tag list, so filters, related posts and the tag cloud work on real
+# topics. Their old /tags/<slug>/ pages become redirects (see build_tag_redirects).
+DIFFICULTY_TAGS = {"intro": "Intro", "very-easy": "Very Easy", "easy": "Easy",
+                   "medium": "Medium", "hard": "Hard", "insane": "Insane"}
+STATUS_TAGS = {"active": "Active", "retired": "Retired"}
+PLATFORM_TAGS = {"hackthebox": "HackTheBox", "htb": "HackTheBox",
+                 "tryhackme": "TryHackMe", "thm": "TryHackMe"}
+TAG_ALIASES = {"homelab": "home-lab", "privesc": "privilege-escalation",
+               "ad": "active-directory"}
+
+# slug -> site-relative URL that the retired tag page should redirect to.
+RETIRED_TAGS: dict[str, str] = {}
+
+
+def split_tags(raw) -> tuple[list[dict], dict]:
+    """Normalise a tags value into topic tags + the facts pulled out of it."""
+    if isinstance(raw, str):
+        raw = [t.strip() for t in raw.split(",") if t.strip()]
+    tags, facts, seen = [], {}, set()
+    for t in raw or []:
+        s = slugify(t)
+        if not s:
+            continue
+        if s in TAG_ALIASES:
+            RETIRED_TAGS[s] = f"tags/{TAG_ALIASES[s]}/"
+            s = TAG_ALIASES[s]
+        if s in DIFFICULTY_TAGS:
+            facts.setdefault("difficulty", DIFFICULTY_TAGS[s])
+            RETIRED_TAGS[s] = f"writeups/?difficulty={s}"
+        elif s in STATUS_TAGS:
+            facts.setdefault("status", STATUS_TAGS[s])
+            RETIRED_TAGS[s] = f"writeups/?status={s}"
+        elif s in PLATFORM_TAGS:
+            facts.setdefault("platform", PLATFORM_TAGS[s])
+            RETIRED_TAGS[s] = "writeups/"
+        elif re.fullmatch(r"\d{4}", s):
+            RETIRED_TAGS[s] = "blog/"
+        elif s not in seen:
+            seen.add(s)
+            tags.append({"slug": s, "name": s})
+    return tags, facts
 
 
 def canon_category(name) -> str:
@@ -279,7 +324,7 @@ def resolve_machine_image(value, doc_name: str = "") -> str:
 # Markdown
 # --------------------------------------------------------------------------
 
-def make_markdown() -> markdown.Markdown:
+def make_markdown(baselevel: int = 1) -> markdown.Markdown:
     return markdown.Markdown(
         extensions=[
             "extra",          # tables, fenced code, attr_list, footnotes, def lists
@@ -288,14 +333,85 @@ def make_markdown() -> markdown.Markdown:
             "meta",
             CodeHiliteExtension(guess_lang=False, linenums=False,
                                 css_class="codehilite"),
-            TocExtension(permalink="#", toc_depth="2-4", anchorlink=False),
+            TocExtension(permalink="#", toc_depth="2-4", anchorlink=False,
+                         baselevel=baselevel),
         ],
     )
 
 
+_FENCE = re.compile(r"^\s*(```|~~~)")
+_SHIFTED_MD: markdown.Markdown | None = None
+
+
+def uses_h1(body: str) -> bool:
+    """True if the Markdown has a top-level `# Heading` outside code fences."""
+    fence = None
+    for line in body.splitlines():
+        m = _FENCE.match(line)
+        if m:
+            if fence is None:
+                fence = m.group(1)
+            elif m.group(1) == fence:
+                fence = None
+            continue
+        if fence is None and re.match(r"#\s+\S", line):
+            return True
+    return False
+
+
+# Obsidian-style callouts (`> [!note] Title`) -> Python-Markdown admonitions.
+_CALLOUT = re.compile(r"^>\s*\[!(\w+)\][+-]?\s*(.*)$")
+CALLOUT_KINDS = {
+    "note": "note", "info": "note", "abstract": "note", "summary": "note",
+    "example": "note", "quote": "note", "question": "note",
+    "tip": "tip", "hint": "tip", "success": "tip", "important": "tip",
+    "warning": "warning", "caution": "warning", "attention": "warning",
+    "danger": "danger", "error": "danger", "failure": "danger", "bug": "danger",
+}
+
+
+def convert_callouts(body: str) -> str:
+    out: list[str] = []
+    lines = body.splitlines()
+    fence = None
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = _FENCE.match(line)
+        if m:
+            if fence is None:
+                fence = m.group(1)
+            elif m.group(1) == fence:
+                fence = None
+        elif fence is None and (c := _CALLOUT.match(line)):
+            kind = CALLOUT_KINDS.get(c.group(1).lower(), "note")
+            title = (c.group(2).strip() or c.group(1).capitalize()).replace('"', "'")
+            out += ["", f'!!! {kind} "{title}"']
+            i += 1
+            while i < len(lines) and lines[i].startswith(">"):
+                out.append("    " + re.sub(r"^>\s?", "", lines[i]))
+                i += 1
+            out.append("")
+            continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
 def render_markdown(md: markdown.Markdown, body: str) -> tuple[str, str]:
+    # The page title is the only <h1>. Posts written with `# Section` headings
+    # are rendered one level down (# -> h2, ## -> h3, ...) so the outline and
+    # the "On this page" box keep their top-level sections.
+    global _SHIFTED_MD
+    if uses_h1(body):
+        if _SHIFTED_MD is None:
+            _SHIFTED_MD = make_markdown(baselevel=2)
+        md = _SHIFTED_MD
     md.reset()
-    rendered = md.convert(body)
+    rendered = md.convert(convert_callouts(body))
+    # Screenshots load lazily so long writeups stay fast.
+    rendered = re.sub(r"<img (?![^>]*\bloading=)", '<img loading="lazy" decoding="async" ',
+                      rendered)
     toc = getattr(md, "toc", "") or ""
     return rendered, toc
 
@@ -327,16 +443,7 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
     title = meta.get("title") or path.stem.replace("-", " ").title()
     slug = slugify(meta.get("slug") or path.stem)
 
-    raw_tags = meta.get("tags") or []
-    if isinstance(raw_tags, str):
-        raw_tags = [t.strip() for t in raw_tags.split(",") if t.strip()]
-    tags = []
-    seen = set()
-    for t in raw_tags:
-        s = slugify(t)
-        if s and s not in seen:
-            seen.add(s)
-            tags.append({"slug": s, "name": str(t).strip()})
+    tags, tag_facts = split_tags(meta.get("tags"))
 
     body_html, toc = render_markdown(md, body)
     plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body_html)).strip()
@@ -357,10 +464,15 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
         "description": str(meta.get("description") or meta.get("summary") or ""),
         "draft": bool(meta.get("draft", False)),
         "featured": bool(meta.get("featured", False)),
-        "platform": str(meta.get("platform") or ""),
-        "difficulty": str(meta.get("difficulty") or ""),
+        "platform": str(meta.get("platform") or tag_facts.get("platform", "")),
+        "difficulty": str(meta.get("difficulty") or tag_facts.get("difficulty", "")),
         "os": str(meta.get("os") or ""),
+        "status": str(meta.get("status") or tag_facts.get("status", "")),
+        # Writeups are HackTheBox machines or Sherlocks (DFIR); used as a filter.
+        "kind": "Sherlock" if any(t["slug"] == "sherlock" for t in tags) else "Machine",
+        "headings": heading_texts(body_html),
         "points": meta.get("points") or "",
+        "path_steps": [str(x) for x in (meta.get("path") or []) if str(x).strip()],
         "image": image,
         "logo_path": f"static/machines/{image}" if image else "",
         "html": body_html,
@@ -392,14 +504,16 @@ def build_tag_index(docs: list[dict]) -> dict[str, dict]:
 
 def tag_dicts(raw) -> list[dict]:
     """Normalise a tags value (list or comma string) into {slug, name} dicts."""
-    if isinstance(raw, str):
-        raw = [t.strip() for t in raw.split(",") if t.strip()]
-    out, seen = [], set()
-    for t in (raw or []):
-        s = slugify(t)
-        if s and s not in seen:
-            seen.add(s)
-            out.append({"slug": s, "name": str(t).strip()})
+    return split_tags(raw)[0]
+
+
+def heading_texts(body_html: str) -> list[str]:
+    """Section headings of a rendered post, for the search index."""
+    out = []
+    for h in re.findall(r"<h[2-4][^>]*>(.*?)</h[2-4]>", body_html, re.S):
+        text = html.unescape(re.sub(r"<[^>]+>", "", re.sub(r'<a class="headerlink".*?</a>', "", h)))
+        if text.strip():
+            out.append(text.strip())
     return out
 
 
@@ -500,6 +614,7 @@ def load_ctf_challenge(path: Path, category: str, event: dict,
         "event_slug": ev_slug,
         "event_title": event["title"],
         "event_url": event["url"],
+        "headings": heading_texts(body_html),
         "html": body_html,
         "toc": toc,
         "text": plain[:1200],
@@ -628,14 +743,59 @@ def doc_card(doc: dict, root: str) -> str:
 </article>"""
 
 
-def doc_row(doc: dict, root: str) -> str:
+FACET_TAGS = {"windows", "linux", "sherlock"}
+
+
+def writeup_label(doc: dict) -> str:
+    """'HackTheBox machine' / 'HackTheBox Sherlock' - shown with the title."""
+    kind = "Sherlock" if doc.get("kind") == "Sherlock" else "machine"
+    return f'{doc["platform"]} {kind}'.strip() if doc["platform"] else kind.capitalize()
+
+
+def writeup_seo_title(doc: dict) -> str:
+    """Page <title> keeps the words people search for: 'HTB Support writeup'."""
+    short = {"HackTheBox": "HTB", "TryHackMe": "THM"}.get(doc["platform"], doc["platform"])
+    kind = " Sherlock" if doc.get("kind") == "Sherlock" else ""
+    return f"{short}{kind} {doc['title']} writeup".strip()
+
+
+def writeup_card(doc: dict, root: str) -> str:
+    """A mid-size writeup entry: logo, title, key facts, two-line summary."""
+    if doc["image"]:
+        logo = (f'<img class="wcard-logo" src="{root}static/machines/{e(doc["image"])}" '
+                f'alt="" width="44" height="44" loading="lazy">')
+    else:
+        logo = '<span class="wcard-logo" aria-hidden="true"></span>'
+    facts = [x for x in ("Sherlock" if doc.get("kind") == "Sherlock" else "", doc["os"]) if x]
+    meta = '<span class="dot">·</span>'.join(
+        [e(x) for x in facts]
+        + [f'<time datetime="{iso_date(doc["date"])}">{human_date(doc["date"])}</time>'])
+    desc = f'<p class="wcard-desc">{e(doc["description"])}</p>' if doc["description"] else ""
+    topics = [t for t in doc["tags"] if t["slug"] not in FACET_TAGS]
+    return f"""<article class="wcard">
+  <div class="wcard-head">
+    {logo}
+    <div class="wcard-titles">
+      <h3 class="wcard-title"><a href="{root}{doc['url']}">{e(doc['title'])}</a></h3>
+      <div class="wcard-meta">{meta}</div>
+    </div>
+    {difficulty_badge(doc['difficulty'])}
+  </div>
+  {desc}
+  {tag_pills(topics, root, limit=3)}
+</article>"""
+
+
+def doc_row(doc: dict, root: str, show_kind: bool = True, tags: int = 3) -> str:
     """A compact one-line entry, used on the home page and tag pages."""
+    kind = (f'<span class="row-kind">{e(doc["collection_singular"])}</span>'
+            if show_kind else "")
     return f"""<li class="row">
   <time class="row-date" datetime="{iso_date(doc['date'])}">{human_date(doc['date']) or '-'}</time>
   <div class="row-body">
     <a class="row-title" href="{root}{doc['url']}">{e(doc['title'])}</a>
-    <span class="row-kind">{e(doc['collection_singular'])}</span>
-    {tag_pills(doc['tags'], root, limit=4)}
+    {kind}
+    {tag_pills(doc['tags'], root, limit=tags) if tags else ""}
   </div>
 </li>"""
 
@@ -647,6 +807,36 @@ def section_header(title: str, blurb: str = "", count: str = "") -> str:
   <h1 class="page-title">{e(title)}{count_html}</h1>
   {blurb_html}
 </header>"""
+
+
+def toc_block(toc: str) -> str:
+    """'On this page': a sticky sidebar on wide screens, collapsed on phones."""
+    if not toc or toc.count("<li") < 3:
+        return ""
+    return ('<aside class="toc" aria-label="On this page">'
+            '<details class="toc-details" open><summary class="toc-title">On this page</summary>'
+            f'{toc}</details></aside>'
+            # Collapse before first paint on narrow screens (no layout jump).
+            '<script>(function(a){if(!matchMedia("(min-width: 1100px)").matches)'
+            'a.querySelector("details").removeAttribute("open")})'
+            '(document.currentScript.previousElementSibling)</script>')
+
+
+def attack_path_html(steps: list[str]) -> str:
+    """Frontmatter `path:` list, rendered as a numbered chain above the post."""
+    if not steps:
+        return ""
+    items = "".join(
+        "<li>" + re.sub(r"`([^`]+)`", r"<code>\1</code>", e(s)) + "</li>" for s in steps)
+    return ('<section class="attack-path" aria-label="Attack path">'
+            f'<p class="attack-path-title">Attack path</p><ol class="chain">{items}</ol></section>')
+
+
+def doc_tags_html(tags: list[dict], root: str) -> str:
+    if not tags:
+        return ""
+    return (f'<footer class="doc-tags"><span class="doc-tags-label">Tags</span>'
+            f'{tag_pills(tags, root)}</footer>')
 
 
 # --------------------------------------------------------------------------
@@ -745,6 +935,7 @@ class Site:
         full_title = title if url == "" else f"{title} · {self.config['site_name']}"
         page = (self.base
                 .replace("{{root}}", root)
+                .replace("{{version}}", BUILD_VERSION)
                 .replace("{{home}}", root or "./")
                 .replace("{{lang}}", "en")
                 .replace("{{title}}", e(full_title))
@@ -775,7 +966,12 @@ class Site:
         root = ""
         writeups = [d for d in self.docs if d["collection"] == "writeups"]
         posts = [d for d in self.docs if d["collection"] in ("blog", "cheatsheets")]
-        ctf = [d for d in self.docs if d["collection"] == "ctf"]
+
+        # Hand-picked writeups (frontmatter `featured: true`) lead; the newest
+        # fill any remaining slots.
+        n_writeups = cfg.get("home_writeup_count", 5)
+        picked = [d for d in writeups if d["featured"]][:n_writeups]
+        picked += [d for d in writeups if d not in picked][:n_writeups - len(picked)]
 
         top_tags = sorted(self.tags.values(), key=lambda t: (-t["count"], t["slug"]))[:14]
         tag_cloud = "".join(
@@ -784,60 +980,102 @@ class Site:
             for t in top_tags
         )
 
-        stats = [
-            ("Writeups", len(writeups)),
-            ("CTF solves", len(ctf)),
-            ("Posts", len([d for d in self.docs if d["collection"] == "blog"])),
-            ("Cheatsheets", len([d for d in self.docs if d["collection"] == "cheatsheets"])),
-            ("Tags", len(self.tags)),
-        ]
-        stats_html = "".join(
-            f'<div class="stat"><span class="stat-num">{n}</span>'
-            f'<span class="stat-label">{e(label)}</span></div>'
-            for label, n in stats
-        )
+        # Proof strip: achievements from config.json, not page counts.
+        def proof_item(p: dict) -> str:
+            tag = "a" if p.get("url") else "div"
+            href = f' href="{e(p["url"])}"' if p.get("url") else ""
+            ext = ' rel="noopener" target="_blank"' if str(p.get("url", "")).startswith("http") else ""
+            detail = f'<span class="proof-detail">{e(p["detail"])}</span>' if p.get("detail") else ""
+            return (f'<{tag} class="proof-item"{href}{ext}>'
+                    f'<span class="proof-value">{e(p["value"])}</span>'
+                    f'<span class="proof-label">{e(p["label"])}</span>{detail}</{tag}>')
+        proof = cfg.get("proof") or []
+        proof_html = (f'<div class="proof" aria-label="Highlights">'
+                      f'{"".join(proof_item(p) for p in proof)}</div>' if proof else "")
 
-        def block(heading, items, more_url, more_label):
-            if not items:
+        def block(heading, body, more_url, more_label, anchor=""):
+            if not body:
                 return ""
-            rows = "".join(doc_row(d, root) for d in items)
-            return f"""<section class="home-block">
+            more = (f'<a class="block-more" href="{more_url}">{e(more_label)} '
+                    f'<span aria-hidden="true">&rarr;</span></a>' if more_url else "")
+            anchor_attr = f' id="{anchor}"' if anchor else ""
+            return f"""<section class="home-block"{anchor_attr}>
   <div class="block-head">
     <h2 class="block-title">{e(heading)}</h2>
-    <a class="block-more" href="{more_url}">{e(more_label)} <span aria-hidden="true">&rarr;</span></a>
+    {more}
   </div>
-  <ul class="rows">{rows}</ul>
+  {body}
 </section>"""
+
+        def rows(items, show_kind=True):
+            if not items:
+                return ""
+            return f'<ul class="rows">{"".join(doc_row(d, root, show_kind, tags=0) for d in items)}</ul>'
+
+        projects = cfg.get("projects") or []
+        projects_html = ""
+        if projects:
+            cards = "".join(
+                f"""<article class="card project-card">
+  <h3 class="card-title"><a href="{e(p['url'])}" rel="noopener" target="_blank">{e(p['name'])}</a></h3>
+  <p class="card-desc">{e(p['summary'])}</p>
+  <div class="project-stack">{"".join(f'<span>{e(t)}</span>' for t in p.get("stack", []))}</div>
+</article>""" for p in projects)
+            projects_html = f'<div class="cards cards-3">{cards}</div>'
+        github = (cfg.get("social") or {}).get("github", "")
+
+        # CTF events (not individual intro challenges) represent the CTF work.
+        ctf_rows = ""
+        if self.ctf_events:
+            items = []
+            for ev in self.ctf_events[:cfg.get("home_ctf_count", 3)]:
+                total = len(ev["challenges"])
+                solved = sum(1 for c in ev["challenges"] if c["solved"])
+                items.append(f"""<li class="row">
+  <time class="row-date" datetime="{iso_date(ev['date'])}">{human_date(ev['date']) or '-'}</time>
+  <div class="row-body">
+    <a class="row-title" href="{root}{ev['url']}">{e(ev['title'])}</a>
+    <span class="row-kind">{solved} / {total} solved</span>
+  </div>
+</li>""")
+            ctf_rows = f'<ul class="rows">{"".join(items)}</ul>'
+
+        social = cfg.get("social") or {}
+        links = [(label, social.get(key)) for key, label in
+                 (("linkedin", "LinkedIn"), ("github", "GitHub"), ("hackthebox", "HackTheBox"))]
+        if cfg.get("email"):
+            links.append(("Email", f'mailto:{cfg["email"]}'))
+        links_html = "".join(
+            f'<a href="{e(url)}"' + ('' if url.startswith("mailto:") else ' rel="me noopener" target="_blank"')
+            + f'>{label}</a>'
+            for label, url in links if url
+        )
 
         badge = (f'<p class="hero-badge">{e(cfg["availability"])}</p>'
                  if cfg.get("availability") else "")
         contact = (f'<a class="btn" href="mailto:{e(cfg["email"])}">Get in touch</a>'
                    if cfg.get("email") else "")
-        content = f"""<section class="hero">
-  {badge}
-  <p class="hero-kicker">{e(cfg['tagline'])}</p>
-  <h1 class="hero-title">{e(cfg['hero_intro'])}</h1>
-  <p class="hero-blurb">{e(cfg['hero_blurb'])}</p>
-  <div class="hero-actions">
-    <a class="btn btn-primary" href="writeups/">Read the writeups</a>
-    <a class="btn" href="resume/">View resume</a>
-    {contact}
+        content = f"""<section class="hero hero-split">
+  <div class="hero-main">
+    {badge}
+    <p class="hero-kicker">{e(cfg['tagline'])}</p>
+    <h1 class="hero-title">{e(cfg['hero_intro'])}</h1>
+    <p class="hero-blurb">{e(cfg['hero_blurb'])}</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="resume/">View resume</a>
+      <a class="btn" href="writeups/">Read the writeups</a>
+      {contact}
+    </div>
+    <nav class="hero-links" aria-label="Profiles">{links_html}</nav>
   </div>
+  {proof_html}
 </section>
 
-<section class="stats" style="--stat-cols:{len(stats)}">{stats_html}</section>
-
-{block("Latest writeups", writeups[:cfg.get('home_writeup_count', 5)], "writeups/", "All writeups")}
-{block("Latest CTF walkthroughs", ctf[:cfg.get('home_ctf_count', 4)], "ctf/", "All CTFs")}
-{block("Recent writing", posts[:cfg.get('home_post_count', 4)], "blog/", "All posts")}
-
-<section class="home-block">
-  <div class="block-head">
-    <h2 class="block-title">Browse by tag</h2>
-    <a class="block-more" href="tags/">All tags <span aria-hidden="true">&rarr;</span></a>
-  </div>
-  <div class="pills pills-lg">{tag_cloud}</div>
-</section>"""
+{block("Projects", projects_html, github, "GitHub", anchor="projects")}
+{block("Featured writeups", f'<div class="wcards">{"".join(writeup_card(d, root) for d in picked)}</div>' if picked else "", "writeups/", "All writeups")}
+{block("CTF walkthroughs", ctf_rows, "ctf/", "All CTFs")}
+{block("Recent writing", rows(posts[:cfg.get('home_post_count', 4)]), "blog/", "All posts")}
+{block("Browse by tag", f'<div class="pills pills-lg">{tag_cloud}</div>', "tags/", "All tags")}"""
         website_ld = self.jsonld({
             "@context": "https://schema.org",
             "@type": "WebSite",
@@ -847,7 +1085,7 @@ class Site:
             "author": self.person_ld(),
             "potentialAction": {
                 "@type": "SearchAction",
-                "target": self.base_url + "/tags/?q={search_term_string}",
+                "target": self.base_url + "/?q={search_term_string}",
                 "query-input": "required name=search_term_string",
             },
         })
@@ -856,38 +1094,92 @@ class Site:
                    current="", body_class="page-home",
                    head_extra=website_ld + person_ld)
 
+    # Filters built from frontmatter fields (writeups only), in display order.
+    FACETS = [("kind", "Type"), ("os", "OS"), ("difficulty", "Difficulty"),
+              ("status", "Status")]
+    TOP_TAG_CHIPS = 12
+
     def build_collection(self, col: dict) -> None:
         docs = [d for d in self.docs if d["collection"] == col["key"]]
         root = "../"
+        is_writeups = col["key"] == "writeups"
 
-        # Tag filter chips for client-side filtering of this list.
-        used_tags = {}
+        def chip(attr: str, value: str, label: str, n: int) -> str:
+            return (f'<button class="chip" {attr}="{e(value)}" type="button">'
+                    f'{e(label)}<span class="pill-count">{n}</span></button>')
+
+        # Field filters: one row per field that actually varies.
+        facet_rows = ""
+        if is_writeups:
+            for key, label in self.FACETS:
+                counts: dict[str, list] = {}
+                for d in docs:
+                    if d[key]:
+                        counts.setdefault(slugify(d[key]), [d[key], 0])[1] += 1
+                if len(counts) < 2:
+                    continue
+                order = sorted(counts.items(), key=lambda kv: (
+                    DIFFICULTY_ORDER.get(kv[1][0].lower(), 50) if key == "difficulty" else 0,
+                    -kv[1][1], kv[0]))
+                chips = "".join(
+                    f'<button class="chip" data-facet="{key}" data-value="{e(v)}" type="button">'
+                    f'{e(name)}<span class="pill-count">{n}</span></button>'
+                    for v, (name, n) in order)
+                facet_rows += (f'<div class="facet"><span class="facet-label">{e(label)}</span>'
+                               f'<div class="chips">{chips}</div></div>')
+
+        # Topic tags: the most used up front, the long tail folded away.
+        # (Topics that duplicate a field filter, like "windows", are left out.)
+        facet_values = ({slugify(d[k]) for d in docs for k, _ in self.FACETS if d[k]}
+                        if is_writeups else set())
+        used: dict[str, int] = {}
         for d in docs:
             for t in d["tags"]:
-                used_tags[t["slug"]] = used_tags.get(t["slug"], 0) + 1
-        chips = "".join(
-            f'<button class="chip" data-tag="{e(slug)}" type="button">'
-            f'{e(next(t["name"] for d in docs for t in d["tags"] if t["slug"] == slug))}'
-            f'<span class="pill-count">{n}</span></button>'
-            for slug, n in sorted(used_tags.items(), key=lambda kv: (-kv[1], kv[0]))
-        )
-        filter_bar = f"""<div class="filter-bar" data-filter-target="#doc-list">
+                if t["slug"] not in facet_values:
+                    used[t["slug"]] = used.get(t["slug"], 0) + 1
+        ranked = sorted(used.items(), key=lambda kv: (-kv[1], kv[0]))
+        top = "".join(chip("data-tag", slug, slug, n) for slug, n in ranked[:self.TOP_TAG_CHIPS])
+        rest = ranked[self.TOP_TAG_CHIPS:]
+        more = ""
+        if rest:
+            more = (f'<details class="more-chips"><summary>All {len(ranked)} topics</summary>'
+                    f'<div class="chips">{"".join(chip("data-tag", s_, s_, n) for s_, n in rest)}'
+                    '</div></details>')
+        topic_row = (f'<div class="facet"><span class="facet-label">Topic</span>'
+                     f'<div class="facet-body"><div class="chips">{top}</div>{more}</div></div>'
+                     if ranked else "")
+
+        filter_bar = f"""<div class="filter-bar" data-filter-target="#doc-list" data-sync-url>
   <div class="filter-row">
     <input class="filter-input" type="search" placeholder="Filter {col['title'].lower()}…"
            aria-label="Filter {e(col['title'])}" autocomplete="off">
     <button class="chip chip-reset" type="button" data-reset>Clear</button>
   </div>
-  <div class="chips">{chips}</div>
+  <details class="facets-wrap" open>
+    <summary>Filters</summary>
+    <div class="facets">{facet_rows}{topic_row}</div>
+  </details>
+  <script>(function(d){{if(!matchMedia("(min-width: 761px)").matches&&!location.search)d.removeAttribute("open")}})(document.currentScript.previousElementSibling)</script>
 </div>""" if docs else ""
 
+        def attrs(d: dict) -> str:
+            text = f'{d["title"]} {d["description"]}'.lower()
+            out = (f'data-title="{e(text)}" '
+                   f'data-tags="{e(" ".join(t["slug"] for t in d["tags"]))}"')
+            if is_writeups:
+                out += "".join(f' data-f-{key}="{e(slugify(d[key]))}"'
+                               for key, _ in self.FACETS if d[key])
+            return out
+
         if docs:
-            cards = "".join(
-                f'<div class="card-wrap" data-title="{e(d["title"].lower())}" '
-                f'data-tags="{e(" ".join(t["slug"] for t in d["tags"]))}">'
-                f'{doc_card(d, root)}</div>'
-                for d in docs
-            )
-            listing = f'<div class="cards" id="doc-list">{cards}</div>'
+            if is_writeups:
+                items = "".join(f'<div class="card-wrap" {attrs(d)}>{writeup_card(d, root)}</div>'
+                                for d in docs)
+                listing = f'<div class="wcards" id="doc-list">{items}</div>'
+            else:
+                items = "".join(f'<div class="card-wrap" {attrs(d)}>{doc_card(d, root)}</div>'
+                                for d in docs)
+                listing = f'<div class="cards" id="doc-list">{items}</div>'
             empty = '<p class="empty" data-empty hidden>No matches. Try a different filter.</p>'
         else:
             listing = ('<p class="empty">Nothing here yet - drop a Markdown file in '
@@ -898,6 +1190,23 @@ class Site:
                    + filter_bar + listing + empty)
         self.write(f"{col['dir']}/", col["title"], content,
                    description=col["blurb"], current=col["dir"])
+
+    def build_tag_redirects(self) -> None:
+        """Keep old /tags/<slug>/ URLs working for tags that were folded into
+        fields (easy, active, hackthebox...) or renamed by an alias."""
+        for slug, target in sorted(RETIRED_TAGS.items()):
+            if slug in self.tags:
+                continue
+            url = f"tags/{slug}/"
+            rel = "../" * depth_of(url) + target
+            page = ('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+                    f'<title>Moved</title><meta name="robots" content="noindex">'
+                    f'<link rel="canonical" href="{e(self.canonical_for(target))}">'
+                    f'<meta http-equiv="refresh" content="0; url={e(rel)}"></head>'
+                    f'<body><p>Moved to <a href="{e(rel)}">{e(target)}</a>.</p></body></html>')
+            out = DIST / url / "index.html"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(page, encoding="utf-8")
 
     def build_doc(self, doc: dict, index: int) -> None:
         root = "../" * depth_of(doc["url"])
@@ -921,10 +1230,7 @@ class Site:
                 facts.append(f'<div class="fact"><dt>{label}</dt><dd>{e(value)}</dd></div>')
         facts_html = f'<dl class="facts">{"".join(facts)}</dl>' if facts else ""
 
-        toc_html = ""
-        if doc["toc"] and doc["toc"].count("<li") >= 3:
-            toc_html = (f'<aside class="toc"><p class="toc-title">On this page</p>'
-                        f'{doc["toc"]}</aside>')
+        toc_html = toc_block(doc["toc"])
 
         # Related = most tag overlap, same-or-any collection.
         related = []
@@ -965,6 +1271,9 @@ class Site:
         pagenav = f'<nav class="pagenav">{"".join(nav_parts)}</nav>'
 
         desc = f'<p class="lede">{e(doc["description"])}</p>' if doc["description"] else ""
+        is_writeup = doc["collection"] == "writeups"
+        kicker = (f'<p class="doc-kicker">{e(writeup_label(doc))}</p>' if is_writeup else "")
+        page_title = writeup_seo_title(doc) if is_writeup else doc["title"]
 
         logo_html = ""
         if doc["image"]:
@@ -973,23 +1282,26 @@ class Site:
                 f'alt="{e(doc["title"])} logo" width="96" height="96" loading="lazy">'
             )
 
-        content = f"""<article class="doc">
+        content = f"""<article class="doc{' has-toc' if toc_html else ''}">
   <nav class="crumbs"><a href="{root}{col['dir']}/">{e(col['title'])}</a>
     <span aria-hidden="true">/</span> <span>{e(doc['title'])}</span></nav>
   <header class="doc-head">
     <div class="doc-head-top">
       {logo_html}
       <div class="doc-head-titles">
-        <h1 class="doc-title">{e(doc['title'])}{difficulty_badge(doc['difficulty'])}</h1>
+        {kicker}<h1 class="doc-title">{e(doc['title'])}{difficulty_badge(doc['difficulty'])}</h1>
         <div class="doc-meta">{meta_html}</div>
       </div>
     </div>
     {desc}
-    {tag_pills(doc['tags'], root)}
     {facts_html}
   </header>
-  {toc_html}
-  <div class="prose">{doc['html']}</div>
+  {attack_path_html(doc["path_steps"])}
+  <div class="doc-body">
+    {toc_html}
+    <div class="prose">{doc['html']}</div>
+  </div>
+  {doc_tags_html(doc['tags'], root)}
 </article>
 {pagenav}
 {related_html}"""
@@ -998,7 +1310,7 @@ class Site:
         ld = {
             "@context": "https://schema.org",
             "@type": art_type,
-            "headline": doc["title"],
+            "headline": page_title,
             "url": self.canonical_for(doc["url"]),
             "mainEntityOfPage": self.canonical_for(doc["url"]),
             "image": self.og_url_for(doc["og_image"]),
@@ -1013,7 +1325,7 @@ class Site:
         if doc["tags"]:
             ld["keywords"] = ", ".join(t["name"] for t in doc["tags"])
 
-        self.write(doc["url"], doc["title"], content,
+        self.write(doc["url"], page_title, content,
                    description=doc["description"] or f"{col['singular']} - {doc['title']}",
                    current=col["dir"], body_class="page-doc",
                    og_image=doc["og_image"], og_type="article",
@@ -1143,9 +1455,12 @@ class Site:
             actions = (f'<div class="hero-actions"><a class="btn btn-primary" '
                        f'href="{root}{e(meta["pdf"])}" download>Download PDF</a></div>')
 
+        # `heading:` overrides the on-page <h1> (e.g. the resume shows the name
+        # while the tab title and nav still say "Resume").
+        heading = str(meta.get("heading") or title)
         content = f"""<div class="doc doc-wide">
   <header class="doc-head">
-    <h1 class="doc-title">{e(title)}</h1>
+    <h1 class="doc-title">{e(heading)}</h1>
     {f'<p class="lede">{e(meta["description"])}</p>' if meta.get("description") else ""}
     {actions}
   </header>
@@ -1157,6 +1472,24 @@ class Site:
         self.write(url, title, content,
                    description=str(meta.get("description") or ""),
                    current=current, body_class=body_class, head_extra=head_extra)
+        if current == "resume":
+            self.build_resume_print(url, heading, meta, body_html)
+
+    def build_resume_print(self, url: str, heading: str, meta: dict, body_html: str) -> None:
+        """A document-style copy of the resume at /resume/print/, which
+        resume_pdf.py turns into the downloadable PDF."""
+        tpl = (TEMPLATES / "resume_print.html").read_text(encoding="utf-8")
+        m = re.search(r'<p class="resume-contact">.*?</p>', body_html, re.S)
+        contact = m.group(0) if m else ""
+        body = body_html.replace(contact, "", 1) if contact else body_html
+        page = (tpl.replace("{{title}}", e(f"{heading} - Resume"))
+                   .replace("{{heading}}", e(heading))
+                   .replace("{{headline}}", e(meta.get("description") or ""))
+                   .replace("{{contact}}", contact)
+                   .replace("{{body}}", body))
+        out = DIST / url / "print" / "index.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(page, encoding="utf-8")
 
     # -- CTF walkthroughs --------------------------------------------------
 
@@ -1176,11 +1509,13 @@ class Site:
         return (f'<span class="{cls} ctf-badge" aria-hidden="true">'
                 f'{e(self._initials(event["title"]))}</span>')
 
-    def _challenge_item(self, chal: dict, root: str) -> str:
+    def _challenge_item(self, chal: dict, root: str, section: str = "") -> str:
         # Show every category the challenge belongs to as a pill, so each row
-        # carries its full category set (even under its category section).
-        cat_pills = "".join(f'<span class="chal-cat">{e(c)}</span>'
-                            for c in chal["categories"])
+        # carries its full category set. The one repeating the section heading
+        # is marked so phones can hide it.
+        cat_pills = "".join(
+            f'<span class="chal-cat{" is-section" if c == section else ""}">{e(c)}</span>'
+            for c in chal["categories"])
         author = (f'<span class="chal-author">by {e(", ".join(chal["authors"]))}</span>'
                   if chal["authors"] else "")
 
@@ -1263,7 +1598,7 @@ class Site:
         sections = ""
         for cat in ordered:
             items = groups[cat]
-            rows = "".join(self._challenge_item(c, root) for c in items)
+            rows = "".join(self._challenge_item(c, root, cat) for c in items)
             solved_n = sum(1 for c in items if c["solved"])
             count = f"{solved_n}/{len(items)}" if solved_n != len(items) else f"{len(items)}"
             sections += (f'<section class="ctf-cat"><h2 class="block-title">{e(cat)}'
@@ -1299,8 +1634,8 @@ class Site:
       <div class="doc-meta">{meta}</div>
     </div>
   </div>
-  {f'<p class="lede">{e(event["description"])}</p>' if event["description"] else ""}
-  {tag_pills(event['tags'], root)}
+  {f'<p class="lede">{e(event["description"])}</p>' if event["description"] and not event["intro_html"] else ""}
+  {tag_pills([t for t in event['tags'] if t['slug'] in self.tags], root)}
   {facts_html}
 </header>
 {intro}
@@ -1334,10 +1669,7 @@ class Site:
                      f'<a href="{root}{event["url"]}">{e(event["title"])}</a></dd></div>')
         facts_html = f'<dl class="facts">{"".join(facts)}</dl>'
 
-        toc_html = ""
-        if chal["toc"] and chal["toc"].count("<li") >= 3:
-            toc_html = (f'<aside class="toc"><p class="toc-title">On this page</p>'
-                        f'{chal["toc"]}</aside>')
+        toc_html = toc_block(chal["toc"])
 
         # Prev / next within the event's solved challenges.
         sibs = [c for c in event["challenges"] if c["solved"]]
@@ -1359,18 +1691,20 @@ class Site:
             parts.append('<span class="pagenav-item pagenav-empty"></span>')
         pagenav = f'<nav class="pagenav">{"".join(parts)}</nav>'
 
-        content = f"""<article class="doc">
+        content = f"""<article class="doc{' has-toc' if toc_html else ''}">
   <nav class="crumbs"><a href="{root}ctf/">CTF Walkthroughs</a>
     <span aria-hidden="true">/</span> <a href="{root}{event['url']}">{e(event['title'])}</a>
     <span aria-hidden="true">/</span> <span>{e(chal['title'])}</span></nav>
   <header class="doc-head">
     <h1 class="doc-title">{e(chal['title'])}{difficulty_badge(chal['difficulty'])}</h1>
     <div class="doc-meta">{meta_html}</div>
-    {tag_pills(chal['tags'], root)}
     {facts_html}
   </header>
-  {toc_html}
-  <div class="prose">{chal['html']}</div>
+  <div class="doc-body">
+    {toc_html}
+    <div class="prose">{chal['html']}</div>
+  </div>
+  {doc_tags_html(chal['tags'], root)}
 </article>
 {pagenav}"""
 
@@ -1410,6 +1744,7 @@ class Site:
 </section>"""
         full = (self.base
                 .replace("{{root}}", "/")
+                .replace("{{version}}", BUILD_VERSION)
                 .replace("{{home}}", "/")
                 .replace("{{lang}}", "en")
                 .replace("{{title}}", e(f"404 · {self.config['site_name']}"))
@@ -1457,6 +1792,7 @@ class Site:
             "date": iso_date(d["date"]),
             "tags": [t["name"] for t in d["tags"]],
             "description": d["description"],
+            "headings": d.get("headings", []),
             "text": d["text"],
         } for d in self.docs]
         (DIST / "index.json").write_text(
@@ -1481,7 +1817,9 @@ class Site:
         for d in self.docs:
             ogimage.generate_card(
                 DIST / d["og_image"], ROOT,
-                title=d["title"], kind=d["collection_singular"],
+                title=d["title"],
+                kind=(writeup_label(d) + " writeup") if d["collection"] == "writeups"
+                else d["collection_singular"],
                 date_str=human_date(d["date"]),
                 tags=[t["name"] for t in d["tags"]],
                 difficulty=d["difficulty"], logo_path=d.get("logo_path", ""),
@@ -1590,7 +1928,9 @@ def main() -> int:
                 site.build_ctf_challenge(chal, ev)
     site.build_tags_index()
     site.build_tag_pages()
-    site.build_markdown_page(CONTENT / "pages" / "resume.md", "resume/", md, "resume")
+    site.build_tag_redirects()
+    site.build_markdown_page(CONTENT / "pages" / "resume.md", "resume/", md, "resume",
+                             body_class="page-doc page-resume")
     site.build_404()
     site.build_sitemap()
     site.build_search_index()

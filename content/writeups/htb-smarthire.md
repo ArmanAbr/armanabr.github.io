@@ -1,5 +1,5 @@
 ---
-title: HTB · SmartHire
+title: SmartHire
 slug: htb-smarthire
 date: 2026-09-12
 image: smarthire
@@ -8,7 +8,13 @@ os: Linux
 difficulty: Medium
 points: 845
 tags: [hackthebox, linux, medium, active, mlflow, pickle, deserialization, python-pth]
-description: SmartHire is a Linux machine on HackTheBox centered on an "AI hiring" web app that leans on **MLflow** for model storage.
+description: MLflow on default credentials serves a pickled model the app trusts: poison it for a shell, then plant a .pth file for root.
+path:
+  - MLflow default credentials
+  - Poisoned pickled model
+  - RCE as svcweb
+  - Malicious .pth in a devs-writable plugin dir
+  - root via the sudo helper
 featured: true
 ---
 
@@ -22,6 +28,7 @@ group-writable directory, and a one-line `.pth` file hands us root.
 The whole chain is short and reliable:
 
 MLflow default creds → overwrite a pickled model → RCE as `svcweb` → malicious `.pth` in a `devs`-writable plugin dir → root.
+
 ---
 ## Reconnaissance
 Start with a full port scan, then service detection on what's open.
