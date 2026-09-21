@@ -163,6 +163,12 @@ def split_tags(raw) -> tuple[list[dict], dict]:
     return tags, facts
 
 
+def place_label(place: str) -> str:
+    """'3rd' -> '3rd place'; free text like 'Finalist' is shown as written."""
+    p = str(place or "").strip()
+    return f"{p} place" if re.fullmatch(r"\d+(st|nd|rd|th)?", p) else p
+
+
 def canon_category(name) -> str:
     n = str(name).strip()
     return CATEGORY_DISPLAY.get(n.lower(), n)
@@ -1035,7 +1041,8 @@ class Site:
   <time class="row-date" datetime="{iso_date(ev['date'])}">{human_date(ev['date']) or '-'}</time>
   <div class="row-body">
     <a class="row-title" href="{root}{ev['url']}">{e(ev['title'])}</a>
-    <span class="row-kind">{solved} / {total} solved</span>
+    {f'<span class="row-kind row-place">{e(place_label(ev["place"]))}</span>' if ev["place"] else ""}
+    <span class="row-kind">{solved} writeups</span>
   </div>
 </li>""")
             ctf_rows = f'<ul class="rows">{"".join(items)}</ul>'
@@ -1561,9 +1568,9 @@ class Site:
                 meta_bits.append(
                     f'<time datetime="{iso_date(ev["date"])}">'
                     f'{human_date_range(ev["date"], ev["date_end"])}</time>')
-            meta_bits.append(f"{solved} solved" + (f" / {total}" if total != solved else ""))
+            meta_bits.append(f"{solved} writeups" + (f" / {total} challenges" if total != solved else ""))
             if ev["place"]:
-                meta_bits.append(e(ev["place"]))
+                meta_bits.append(e(place_label(ev["place"])))
             meta = '<span class="dot">·</span>'.join(meta_bits)
             desc = f'<p class="card-desc">{e(ev["description"])}</p>' if ev["description"] else ""
 
@@ -1610,7 +1617,10 @@ class Site:
             meta_bits.append(
                 f'<time datetime="{iso_date(event["date"])}">'
                 f'{human_date_range(event["date"], event["date_end"])}</time>')
-        meta_bits.append(f"{solved} of {total} solved")
+        if event["place"]:
+            meta_bits.append(e(place_label(event["place"])))
+        # Counts are my own solves (each has a writeup), not the team's.
+        meta_bits.append(f"I solved {solved} of {total}")
         meta = '<span class="dot">·</span>'.join(meta_bits)
 
         facts = []

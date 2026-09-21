@@ -29,6 +29,8 @@ internships and junior roles.
 
 ### Team Armenia - European Cybersecurity Challenge (ECSC) 2026, Bochum *Oct 12-16, 2026*
 
+- 3rd place with the team in the ECSC 2026 Demo CTF (jeopardy, CSCG 2025 challenges), Sep 2026.
+
 ### Students National Cyber Challenge 2026, Final (team) *Oct 24, 2026*
 
 ## Projects
@@ -66,8 +68,8 @@ drone radar (C++)
 - Web application security: OWASP Top 10 and the PortSwigger Web Security
   Academy; exploited SQL injection, XSS, LFI/RFI, CSRF, SSRF and IDOR by hand
   in Burp Suite.
-- Active Directory: LDAP enumeration, BloodHound analysis, credential abuse,
-  lateral movement, token impersonation and ACL abuse.
+- Active Directory: LDAP enumeration, BloodHound, credential abuse, lateral
+  movement, token impersonation and ACL abuse.
 - Infrastructure: enumeration and privilege escalation on Linux and Windows
   hosts; traffic analysis in Wireshark and tcpdump.
 - Scripting: Python, Bash and PowerShell tooling to automate enumeration and
