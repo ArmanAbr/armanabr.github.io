@@ -1,5 +1,5 @@
 ---
-title: HTB · Responder
+title: Responder
 slug: htb-responder
 date: 2026-07-21
 image: responder
@@ -8,8 +8,14 @@ os: Windows
 difficulty: Very Easy
 points: 150
 tags: [hackthebox, windows, very-easy, retired, lfi, responder, ntlm-hash-capture, evil-winrm]
-description: This lab focuses on how a File Inclusion vulnerability on a webpage being served on a Windows machine can be exploited to collect the NetNTLMv2 challenge of the user that is running the web server.
-featured: true
+description: An LFI on a Windows web server is pointed at Responder to capture a NetNTLMv2 hash, which cracks to Administrator's password for WinRM.
+path:
+  - LFI in the page parameter
+  - UNC path to Responder
+  - NetNTLMv2 hash
+  - Crack with John
+  - WinRM as Administrator
+featured: false
 ---
 
 
@@ -67,7 +73,9 @@ http://unika.htb/index.php?page=../../../../../../../../windows/system32/drivers
 ```
 If the `hosts` file contents are displayed, LFI is confirmed.
 
-> **Why this works:** The PHP `include()` or `require()` function is being used with user-controlled input without proper sanitization. The `../` sequences traverse up the directory tree until reaching the filesystem root, then descend into `windows/system32/drivers/etc/hosts`.
+### Why this works
+The PHP `include()` or `require()` function is being used with user-controlled input without proper sanitization. The `../` sequences traverse up the directory tree until reaching the filesystem root, then descend into `windows/system32/drivers/etc/hosts`.
+
 ---
 # Exploitation: NTLM Hash Capture via Responder
 ## The Attack Concept

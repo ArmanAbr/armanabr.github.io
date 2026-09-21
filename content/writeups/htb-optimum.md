@@ -1,5 +1,5 @@
 ---
-title: HTB · Optimum
+title: Optimum
 slug: htb-optium
 date: 2026-08-17
 image: optimum
@@ -8,8 +8,13 @@ os: Windows
 difficulty: Easy
 points: 450
 tags: [hackthebox, windows, easy, retired, metasploit, cve-2014-6287, http-file-server]
-description: Optimum is an easy-difficulty Windows machine on Hack The Box focused on exploiting known CVEs. It centers on gaining a foothold through a vulnerable HttpFileServer (Rejetto HFS) and escalating privileges via a Windows kernel exploit (MS16-032).
-featured: true
+description: A vulnerable Rejetto HFS gives a shell (CVE-2014-6287), then the MS16-032 kernel exploit gives SYSTEM.
+path:
+  - Rejetto HFS RCE (CVE-2014-6287)
+  - User shell
+  - MS16-032 kernel exploit
+  - SYSTEM
+featured: false
 ---
 
 # Reconnaissance

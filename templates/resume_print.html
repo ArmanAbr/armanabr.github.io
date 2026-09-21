@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>{{title}}</title>
+<!-- Print layout for the resume PDF (py resume_pdf.py). Same content as
+     /resume/, from content/pages/resume.md - only the design differs. -->
+<style>
+  @page { size: A4; margin: 9mm 12mm 8mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; color: #1d232b; background: #fff;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt; line-height: 1.32;
+  }
+  a { color: inherit; text-decoration: none; }
+  code { font-family: inherit; }
+  .headerlink { display: none; }
+
+  header { padding-bottom: 6pt; margin-bottom: 6pt; border-bottom: 1.4pt solid #0e7490; }
+  h1 { margin: 0; font-size: 21pt; line-height: 1.1; letter-spacing: -0.01em; color: #0d141d; }
+  .headline { margin: 2pt 0 0; font-size: 10.5pt; color: #0e7490; font-weight: 600; }
+
+  .resume-contact { margin: 4pt 0 0; font-size: 8.3pt; color: #3d4652; white-space: nowrap; }
+
+  main > p { margin: 0 0 3pt; }
+  h2 {
+    margin: 7.5pt 0 3pt; padding-bottom: 1.5pt; border-bottom: .6pt solid #cfd7e3;
+    font-size: 8.6pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: #0e7490; break-after: avoid;
+  }
+  h3 {
+    display: flex; align-items: baseline; gap: 8pt; margin: 4pt 0 .5pt;
+    font-size: 9.6pt; font-weight: 650; color: #0d141d; break-after: avoid;
+  }
+  h3 em { margin-left: auto; font-style: normal; font-weight: 400; font-size: 8.6pt; color: #56616f; white-space: nowrap; }
+  ul { margin: 1pt 0 0; padding-left: 11pt; }
+  li { margin: .3pt 0; break-inside: avoid; }
+  li::marker { color: #8892a1; }
+  p { margin: 2pt 0; }
+  strong { font-weight: 650; color: #0d141d; }
+</style>
+</head>
+<body>
+<header>
+  <h1>{{heading}}</h1>
+  <p class="headline">{{headline}}</p>
+  {{contact}}
+</header>
+<main>
+{{body}}
+</main>
+</body>
+</html>

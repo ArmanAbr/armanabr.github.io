@@ -1,5 +1,5 @@
 ---
-title: HTB · Cicada
+title: Cicada
 slug: htb-cicada
 date: 2026-08-02
 image: cicada
@@ -8,8 +8,17 @@ os: Windows
 difficulty: Easy
 points: 585
 tags: [hackthebox, windows, easy, retired, active-directory, smbclient, crackmapexec, smbmap, password-spray, evil-winrm]
-description: Cicada is an easy-difficult Windows machine that focuses on beginner Active Directory enumeration and exploitation. 
-featured: true
+description: A guest-readable HR share leaks a default password; a password spray, a password in an AD description and SeBackupPrivilege lead to root.txt.
+path:
+  - Guest-readable HR share
+  - Default password in a notice
+  - RID brute force for users
+  - Password spray
+  - Password in an account description
+  - DEV share backup script
+  - emily.oscars
+  - SeBackupPrivilege
+featured: false
 ---
 
 # Reconnaissance
