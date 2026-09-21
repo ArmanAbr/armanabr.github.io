@@ -29,7 +29,7 @@ internships and junior roles.
 
 ### Team Armenia - European Cybersecurity Challenge (ECSC) 2026, Bochum *Oct 12-16, 2026*
 
-- 3rd place with the team in the ECSC 2026 Demo CTF (jeopardy, CSCG 2025 challenges), Sep 2026.
+- 3rd place with the team in the ECSC 2026 Demo CTF (online jeopardy, CSCG 2025 challenges), Sep 2026.
 
 ### Students National Cyber Challenge 2026, Final (team) *Oct 24, 2026*
 
