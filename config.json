@@ -50,7 +50,8 @@
     {
       "value": "ECSC 2026",
       "label": "Team Armenia",
-      "detail": "European Cybersecurity Challenge · Bochum, Oct 12-16"
+      "detail": "Bochum, Oct 12-16 · 3rd place in the team's demo CTF",
+      "url": "ctf/ecsc-2026-demo/"
     },
     {
       "value": "Hacker",

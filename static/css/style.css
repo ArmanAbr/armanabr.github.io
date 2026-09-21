@@ -368,6 +368,7 @@ a.proof-item:hover { background: var(--accent-soft); color: var(--fg); }
   font-size: .74rem; color: var(--fg-dim); border: 1px solid var(--line);
   border-radius: 99px; padding: .02rem .5rem;
 }
+.row-place { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); font-weight: 600; }
 
 /* ---------- cards ---------- */
 
