@@ -448,6 +448,8 @@ a.proof-item:hover { background: var(--accent-soft); color: var(--fg); }
 .chip.on { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
 .chip-reset { flex: 0 0 auto; padding-inline: .9rem; }
 .chip[hidden] { display: none; }
+.chip.is-empty { opacity: .4; cursor: default; }
+.chip.is-empty:hover { color: var(--fg-muted); border-color: var(--line); }
 .facets-wrap > summary { display: none; }
 @media (max-width: 760px) {
   .facets-wrap > summary {
@@ -486,6 +488,11 @@ a.proof-item:hover { background: var(--accent-soft); color: var(--fg); }
 .wcard-logo {
   flex: 0 0 auto; width: 44px; height: 44px; object-fit: contain; padding: 4px;
   border-radius: 10px; background: var(--bg-elev-2); border: 1px solid var(--line);
+}
+.wcard-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: .82rem; font-weight: 700; color: var(--accent);
+  background: var(--accent-soft); border-color: var(--accent-line);
 }
 .wcard-titles { flex: 1; min-width: 0; }
 .wcard-title { font-size: 1.05rem; line-height: 1.3; }

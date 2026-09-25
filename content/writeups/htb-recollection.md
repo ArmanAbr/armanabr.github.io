@@ -4,6 +4,7 @@ slug: htb-recollection
 date: 2026-09-20
 image: recollection
 platform: HackTheBox
+kind: Sherlock
 os: Windows
 difficulty: Easy
 points: 535

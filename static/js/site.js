@@ -145,18 +145,54 @@
       history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
     }
 
+    // Does an item pass every filter, optionally ignoring one facet (so that
+    // facet's own chips can be counted against the other filters)?
+    function matches(item, q, skipFacet) {
+      if (q && item.text.indexOf(q) === -1) return false;
+      var ok = true;
+      activeTags.forEach(function (tag) { if (item.tags.indexOf(tag) === -1) ok = false; });
+      Object.keys(activeFacets).forEach(function (k) {
+        if (k === skipFacet) return;
+        if (activeFacets[k].size && !activeFacets[k].has(item.facets[k])) ok = false;
+      });
+      return ok;
+    }
+
+    // Show how many results each chip would leave, and grey out dead ends.
+    function updateChips(q) {
+      facetChips.forEach(function (chip) {
+        var k = chip.getAttribute("data-facet"), v = chip.getAttribute("data-value");
+        var n = items.filter(function (it) {
+          return it.facets[k] === v && matches(it, q, k);
+        }).length;
+        setChipCount(chip, n);
+      });
+      tagChips.forEach(function (chip) {
+        var tag = chip.getAttribute("data-tag");
+        var n = items.filter(function (it) {
+          return it.tags.indexOf(tag) !== -1 && matches(it, q);
+        }).length;
+        setChipCount(chip, n);
+      });
+    }
+
+    function setChipCount(chip, n) {
+      var badge = chip.querySelector(".pill-count");
+      if (badge) badge.textContent = n;
+      var dead = n === 0 && !chip.classList.contains("on");
+      chip.classList.toggle("is-empty", dead);
+      chip.disabled = dead;
+    }
+
     function apply() {
       var q = (input ? input.value : "").trim().toLowerCase();
       var visible = 0;
       items.forEach(function (item) {
-        var show = !q || item.text.indexOf(q) !== -1;
-        activeTags.forEach(function (tag) { if (item.tags.indexOf(tag) === -1) show = false; });
-        Object.keys(activeFacets).forEach(function (k) {
-          if (activeFacets[k].size && !activeFacets[k].has(item.facets[k])) show = false;
-        });
+        var show = matches(item, q);
         item.el.hidden = !show;
         if (show) visible++;
       });
+      updateChips(q);
       document.querySelectorAll(".tag-group").forEach(function (group) {
         group.hidden = !group.querySelector("li:not([hidden])");
       });
@@ -270,7 +306,8 @@
       var scored = [];
       index.forEach(function (d) {
         var heads = (d.headings || []).join(" ").toLowerCase();
-        var hay = (d.title + " " + (d.description || "") + " " + (d.tags || []).join(" ") + " " + heads + " " + (d.text || "")).toLowerCase();
+        var hay = (d.title + " " + (d.description || "") + " " + (d.tags || []).join(" ") + " " +
+                   (d.facets || []).join(" ") + " " + heads + " " + (d.text || "")).toLowerCase();
         var score = 0;
         if (d.title.toLowerCase().indexOf(q) !== -1) score += 10;
         if ((d.tags || []).some(function (t) { return t.toLowerCase().indexOf(q) !== -1; })) score += 5;
