@@ -4,6 +4,7 @@ slug: htb-brutus
 date: 2026-08-21
 image: brutus
 platform: HackTheBox
+kind: Sherlock
 os: Linux
 difficulty: Very Easy
 points: 195

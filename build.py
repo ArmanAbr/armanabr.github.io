@@ -39,6 +39,7 @@ DIST = ROOT / "dist"
 # Machine logos: drop a file in static/machines/ and reference it in a writeup's
 # frontmatter as `image: <name>` (extension optional).
 MACHINE_IMG_DIR = STATIC / "machines"
+CHALLENGE_IMG_DIR = STATIC / "challenges"
 MACHINE_IMG_EXTS = (".png", ".svg", ".webp", ".jpg", ".jpeg", ".gif", ".avif")
 
 
@@ -294,12 +295,14 @@ def depth_of(url: str) -> int:
     return len([p for p in url.split("/") if p])
 
 
-def resolve_machine_image(value, doc_name: str = "") -> str:
+def resolve_machine_image(value, kind: str = "", doc_name: str = "") -> str:
     """
-    Turn a frontmatter `image:` value into a filename in static/machines/.
+    Turn a frontmatter `image:` value into a path under static/.
 
     `image: lame`      -> finds lame.png / lame.svg / ... (any known extension)
     `image: lame.png`  -> used as-is if that file exists
+    Machine and Sherlock art lives in static/machines/, challenge art in
+    static/challenges/; both folders are searched, the likelier one first.
     Returns "" when nothing is set, or warns when a name was given but missing.
     """
     if not value:
@@ -308,22 +311,36 @@ def resolve_machine_image(value, doc_name: str = "") -> str:
     if not name:
         return ""
 
-    given = Path(name)
-    # Exact filename (with extension) that exists - use it directly.
-    if given.suffix and (MACHINE_IMG_DIR / name).is_file():
-        return name
+    dirs = [("challenges", CHALLENGE_IMG_DIR), ("machines", MACHINE_IMG_DIR)]
+    if kind != "Challenge":
+        dirs.reverse()
 
-    # Otherwise match <stem>.<known-ext>, case-insensitively.
+    given = Path(name)
     stem = given.stem if given.suffix else name
-    if MACHINE_IMG_DIR.is_dir():
-        for f in sorted(MACHINE_IMG_DIR.iterdir()):
-            if (f.is_file() and f.suffix.lower() in MACHINE_IMG_EXTS
-                    and f.stem.lower() == stem.lower()):
-                return f.name
+    for folder, img_dir in dirs:
+        # Exact filename (with extension) that exists - use it directly.
+        if given.suffix and (img_dir / name).is_file():
+            return f"static/{folder}/{name}"
+        # Otherwise match <stem>.<known-ext>, case-insensitively.
+        if img_dir.is_dir():
+            for f in sorted(img_dir.iterdir()):
+                if (f.is_file() and f.suffix.lower() in MACHINE_IMG_EXTS
+                        and f.stem.lower() == stem.lower()):
+                    return f"static/{folder}/{f.name}"
 
     where = f" (in {doc_name})" if doc_name else ""
-    print(f"  ! image '{value}' not found in static/machines/{where}")
+    print(f"  ! image '{value}' not found in static/machines/ or "
+          f"static/challenges/{where}")
     return ""
+
+
+def initials(title: str) -> str:
+    """'Intro to Web' -> 'INTR'; used when a writeup or CTF has no logo file."""
+    for tok in re.split(r"\s+", str(title)):
+        letters = re.sub(r"[^A-Za-z0-9]", "", tok)
+        if re.search(r"[A-Za-z]", letters):
+            return letters[:2].upper()
+    return (str(title)[:2] or "??").upper()
 
 
 # --------------------------------------------------------------------------
@@ -432,11 +449,17 @@ def load_documents(md: markdown.Markdown, include_drafts: bool) -> list[dict]:
         folder = CONTENT / col["dir"]
         if not folder.is_dir():
             continue
+        seen: dict[str, str] = {}
         for path in sorted(folder.glob("*.md")):
             doc = load_document(path, col, md)
             if doc["draft"] and not include_drafts:
                 print(f"  skip (draft): {path.name}")
                 continue
+            if doc["slug"] in seen:
+                print(f"  ! duplicate slug '{doc['slug']}' in {path.name} - "
+                      f"already used by {seen[doc['slug']]} (one will overwrite "
+                      f"the other; set a different `slug:`)")
+            seen[doc["slug"]] = path.name
             docs.append(doc)
     docs.sort(key=lambda d: (d["date"] or date.min, d["title"]), reverse=True)
     return docs
@@ -454,7 +477,18 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
     body_html, toc = render_markdown(md, body)
     plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body_html)).strip()
     words = len(re.findall(r"\w+", plain))
-    image = resolve_machine_image(meta.get("image"), path.name)
+
+    # Writeups are HackTheBox machines, Sherlocks (DFIR) or challenges. `kind:`
+    # says which; without it, the `sherlock` tag still marks a Sherlock.
+    is_writeup = col["key"] == "writeups"
+    kinds = {"machine": "Machine", "sherlock": "Sherlock", "challenge": "Challenge"}
+    kind = kinds.get(str(meta.get("kind") or "").strip().lower(), "")
+    if not kind:
+        kind = "Sherlock" if any(t["slug"] == "sherlock" for t in tags) else "Machine"
+    kind = kind if is_writeup else ""
+    # Challenges have a category (Web, Pwn, Crypto...) instead of an OS.
+    category = canon_category(meta.get("category")) if meta.get("category") else ""
+    image = resolve_machine_image(meta.get("image"), kind, path.name)
 
     return {
         "path": path,
@@ -474,13 +508,13 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
         "difficulty": str(meta.get("difficulty") or tag_facts.get("difficulty", "")),
         "os": str(meta.get("os") or ""),
         "status": str(meta.get("status") or tag_facts.get("status", "")),
-        # Writeups are HackTheBox machines or Sherlocks (DFIR); used as a filter.
-        "kind": "Sherlock" if any(t["slug"] == "sherlock" for t in tags) else "Machine",
+        "kind": kind,
+        "category": category,
         "headings": heading_texts(body_html),
         "points": meta.get("points") or "",
         "path_steps": [str(x) for x in (meta.get("path") or []) if str(x).strip()],
         "image": image,
-        "logo_path": f"static/machines/{image}" if image else "",
+        "logo_path": image,
         "html": body_html,
         "toc": toc,
         "text": plain[:1200],
@@ -731,8 +765,8 @@ def doc_card(doc: dict, root: str) -> str:
     desc = f'<p class="card-desc">{e(doc["description"])}</p>' if doc["description"] else ""
 
     logo = ""
-    if doc["image"]:
-        logo = (f'<img class="card-logo" src="{root}static/machines/{e(doc["image"])}" '
+    if doc["logo_path"]:
+        logo = (f'<img class="card-logo" src="{root}{e(doc["logo_path"])}" '
                 f'alt="" width="30" height="30" loading="lazy">')
 
     return f"""<article class="card">
@@ -749,13 +783,21 @@ def doc_card(doc: dict, root: str) -> str:
 </article>"""
 
 
-FACET_TAGS = {"windows", "linux", "sherlock"}
+def topic_tags(doc: dict) -> list[dict]:
+    """Tags minus the ones that repeat a field already shown as a filter."""
+    hide = {slugify(str(doc.get(k) or "")) for k in
+            ("kind", "os", "category", "difficulty", "status", "platform")}
+    return [t for t in doc["tags"] if t["slug"] not in hide]
 
 
-def writeup_label(doc: dict) -> str:
-    """'HackTheBox machine' / 'HackTheBox Sherlock' - shown with the title."""
-    kind = "Sherlock" if doc.get("kind") == "Sherlock" else "machine"
-    return f'{doc["platform"]} {kind}'.strip() if doc["platform"] else kind.capitalize()
+def writeup_label(doc: dict, with_category: bool = True) -> str:
+    """'HackTheBox machine' / 'HackTheBox Sherlock' / 'HackTheBox challenge
+    · Web' - shown above the title."""
+    word = {"Sherlock": "Sherlock", "Challenge": "challenge"}.get(doc.get("kind"), "machine")
+    label = f'{doc["platform"]} {word}'.strip() if doc["platform"] else word.capitalize()
+    if with_category and doc.get("kind") == "Challenge" and doc.get("category"):
+        label += f' · {doc["category"]}'
+    return label
 
 
 def writeup_seo_title(doc: dict) -> str:
@@ -767,17 +809,20 @@ def writeup_seo_title(doc: dict) -> str:
 
 def writeup_card(doc: dict, root: str) -> str:
     """A mid-size writeup entry: logo, title, key facts, two-line summary."""
-    if doc["image"]:
-        logo = (f'<img class="wcard-logo" src="{root}static/machines/{e(doc["image"])}" '
+    if doc["logo_path"]:
+        logo = (f'<img class="wcard-logo" src="{root}{e(doc["logo_path"])}" '
                 f'alt="" width="44" height="44" loading="lazy">')
     else:
-        logo = '<span class="wcard-logo" aria-hidden="true"></span>'
-    facts = [x for x in ("Sherlock" if doc.get("kind") == "Sherlock" else "", doc["os"]) if x]
+        logo = (f'<span class="wcard-logo wcard-badge" aria-hidden="true">'
+                f'{e(initials(doc["title"]))}</span>')
+    # "Sherlock · Windows", "Challenge · Web", or just "Windows" for machines.
+    facts = [x for x in (doc["kind"] if doc.get("kind") in ("Sherlock", "Challenge") else "",
+                         doc.get("category") or doc["os"]) if x]
     meta = '<span class="dot">·</span>'.join(
         [e(x) for x in facts]
         + [f'<time datetime="{iso_date(doc["date"])}">{human_date(doc["date"])}</time>'])
     desc = f'<p class="wcard-desc">{e(doc["description"])}</p>' if doc["description"] else ""
-    topics = [t for t in doc["tags"] if t["slug"] not in FACET_TAGS]
+    topics = topic_tags(doc)
     return f"""<article class="wcard">
   <div class="wcard-head">
     {logo}
@@ -828,14 +873,15 @@ def toc_block(toc: str) -> str:
             '(document.currentScript.previousElementSibling)</script>')
 
 
-def attack_path_html(steps: list[str]) -> str:
+def attack_path_html(steps: list[str], label: str = "Attack path") -> str:
     """Frontmatter `path:` list, rendered as a numbered chain above the post."""
     if not steps:
         return ""
     items = "".join(
         "<li>" + re.sub(r"`([^`]+)`", r"<code>\1</code>", e(s)) + "</li>" for s in steps)
-    return ('<section class="attack-path" aria-label="Attack path">'
-            f'<p class="attack-path-title">Attack path</p><ol class="chain">{items}</ol></section>')
+    return (f'<section class="attack-path" aria-label="{e(label)}">'
+            f'<p class="attack-path-title">{e(label)}</p>'
+            f'<ol class="chain">{items}</ol></section>')
 
 
 def doc_tags_html(tags: list[dict], root: str) -> str:
@@ -1102,8 +1148,8 @@ class Site:
                    head_extra=website_ld + person_ld)
 
     # Filters built from frontmatter fields (writeups only), in display order.
-    FACETS = [("kind", "Type"), ("os", "OS"), ("difficulty", "Difficulty"),
-              ("status", "Status")]
+    FACETS = [("kind", "Type"), ("os", "OS"), ("category", "Category"),
+              ("difficulty", "Difficulty"), ("status", "Status")]
     TOP_TAG_CHIPS = 12
 
     def build_collection(self, col: dict) -> None:
@@ -1232,6 +1278,7 @@ class Site:
         # Writeup-specific fact table.
         facts = []
         for label, value in (("Platform", doc["platform"]), ("OS", doc["os"]),
+                             ("Category", doc.get("category", "")),
                              ("Difficulty", doc["difficulty"]), ("Points", doc["points"])):
             if value:
                 facts.append(f'<div class="fact"><dt>{label}</dt><dd>{e(value)}</dd></div>')
@@ -1283,9 +1330,9 @@ class Site:
         page_title = writeup_seo_title(doc) if is_writeup else doc["title"]
 
         logo_html = ""
-        if doc["image"]:
+        if doc["logo_path"]:
             logo_html = (
-                f'<img class="machine-logo" src="{root}static/machines/{e(doc["image"])}" '
+                f'<img class="machine-logo" src="{root}{e(doc["logo_path"])}" '
                 f'alt="{e(doc["title"])} logo" width="96" height="96" loading="lazy">'
             )
 
@@ -1303,7 +1350,7 @@ class Site:
     {desc}
     {facts_html}
   </header>
-  {attack_path_html(doc["path_steps"])}
+  {attack_path_html(doc["path_steps"], "Solution path" if doc.get("kind") == "Challenge" else "Attack path")}
   <div class="doc-body">
     {toc_html}
     <div class="prose">{doc['html']}</div>
@@ -1500,21 +1547,13 @@ class Site:
 
     # -- CTF walkthroughs --------------------------------------------------
 
-    @staticmethod
-    def _initials(title: str) -> str:
-        for tok in re.split(r"\s+", str(title)):
-            letters = re.sub(r"[^A-Za-z0-9]", "", tok)
-            if re.search(r"[A-Za-z]", letters):
-                return letters[:4].upper()
-        return (str(title)[:2] or "CTF").upper()
-
     def ctf_logo_html(self, event: dict, root: str, cls: str, size: int) -> str:
         if event["logo"]:
             return (f'<img class="{cls}" src="{root}static/ctf/{e(event["logo"])}" '
                     f'alt="{e(event["title"])} logo" width="{size}" height="{size}" '
                     f'loading="lazy">')
         return (f'<span class="{cls} ctf-badge" aria-hidden="true">'
-                f'{e(self._initials(event["title"]))}</span>')
+                f'{e(initials(event["title"]))}</span>')
 
     def _challenge_item(self, chal: dict, root: str, section: str = "") -> str:
         # Show every category the challenge belongs to as a pill, so each row
@@ -1802,6 +1841,7 @@ class Site:
             "date": iso_date(d["date"]),
             "tags": [t["name"] for t in d["tags"]],
             "description": d["description"],
+            "facets": [x for x in (d.get("kind"), d.get("os"), d.get("category")) if x],
             "headings": d.get("headings", []),
             "text": d["text"],
         } for d in self.docs]
@@ -1828,7 +1868,8 @@ class Site:
             ogimage.generate_card(
                 DIST / d["og_image"], ROOT,
                 title=d["title"],
-                kind=(writeup_label(d) + " writeup") if d["collection"] == "writeups"
+                kind=(writeup_label(d, with_category=False) + " writeup")
+                if d["collection"] == "writeups"
                 else d["collection_singular"],
                 date_str=human_date(d["date"]),
                 tags=[t["name"] for t in d["tags"]],
