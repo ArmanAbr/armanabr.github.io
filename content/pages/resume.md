@@ -29,7 +29,7 @@ internships and junior roles.
 
 ### Team Armenia - European Cybersecurity Challenge (ECSC) 2026, Bochum *Oct 12-16, 2026*
 
-### Students National Cyber Challenge 2026, Final (team) *Oct 24, 2026*
+### Students National Cyber Challenge 2026, Final (team) *Nov 14, 2026*
 
 ## Projects
 
@@ -84,7 +84,7 @@ drone radar (C++)
 
 - **Ethical Hacker** - Cisco Networking Academy, Sep 2026
 - **In progress:** HTB CDSA, then HTB CPTS
-- **HackTheBox:** Hacker rank · 30+ machines · 110+ challenges · level 61
+- **HackTheBox:** Hacker rank · 30+ machines · 120+ challenges · level 60+
 
 ## Skills
 
