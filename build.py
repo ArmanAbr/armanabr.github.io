@@ -465,6 +465,15 @@ def load_documents(md: markdown.Markdown, include_drafts: bool) -> list[dict]:
     return docs
 
 
+def active_notice(kind: str) -> str:
+    """Body shown in place of a writeup whose box is still active on HackTheBox."""
+    word = {"Sherlock": "Sherlock", "Challenge": "challenge"}.get(kind, "machine")
+    return (f"> [!warning] This {word} is still active\n"
+            f"> HackTheBox rules don't allow public writeups for active content, so "
+            f"this one stays locked until the {word} retires. I've already solved it - "
+            f"the full walkthrough goes up here the day it does.\n")
+
+
 def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
     raw = path.read_text(encoding="utf-8")
     meta, body = parse_frontmatter(raw)
@@ -490,6 +499,16 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
     category = canon_category(meta.get("category")) if meta.get("category") else ""
     image = resolve_machine_image(meta.get("image"), kind, path.name)
 
+    # HackTheBox doesn't allow public writeups for active content, so an active
+    # writeup publishes only its card and a notice. Keep the real writeup out of
+    # this repo until the box retires, then retag it `retired`.
+    status = str(meta.get("status") or tag_facts.get("status", ""))
+    locked = is_writeup and status == "Active"
+    if locked:
+        body_html, toc = render_markdown(md, active_notice(kind))
+        plain = ""
+        words = 0
+
     return {
         "path": path,
         "collection": col["key"],
@@ -507,12 +526,14 @@ def load_document(path: Path, col: dict, md: markdown.Markdown) -> dict:
         "platform": str(meta.get("platform") or tag_facts.get("platform", "")),
         "difficulty": str(meta.get("difficulty") or tag_facts.get("difficulty", "")),
         "os": str(meta.get("os") or ""),
-        "status": str(meta.get("status") or tag_facts.get("status", "")),
+        "status": status,
+        "locked": locked,
         "kind": kind,
         "category": category,
         "headings": heading_texts(body_html),
         "points": meta.get("points") or "",
-        "path_steps": [str(x) for x in (meta.get("path") or []) if str(x).strip()],
+        "path_steps": [] if locked else [str(x) for x in (meta.get("path") or [])
+                                         if str(x).strip()],
         "image": image,
         "logo_path": image,
         "html": body_html,
@@ -759,7 +780,8 @@ def doc_card(doc: dict, root: str) -> str:
             meta_bits.append(e(doc["platform"]))
         if doc["os"]:
             meta_bits.append(e(doc["os"]))
-    meta_bits.append(f'{doc["reading_time"]} min read')
+    if not doc.get("locked"):
+        meta_bits.append(f'{doc["reading_time"]} min read')
     meta = '<span class="dot">·</span>'.join(meta_bits)
 
     desc = f'<p class="card-desc">{e(doc["description"])}</p>' if doc["description"] else ""
@@ -1021,7 +1043,9 @@ class Site:
 
         # Hand-picked writeups (frontmatter `featured: true`) lead; the newest
         # fill any remaining slots.
+        # Locked (active-box) writeups have nothing to read yet, so skip them.
         n_writeups = cfg.get("home_writeup_count", 5)
+        writeups = [d for d in writeups if not d.get("locked")]
         picked = [d for d in writeups if d["featured"]][:n_writeups]
         picked += [d for d in writeups if d not in picked][:n_writeups - len(picked)]
 
@@ -1272,7 +1296,8 @@ class Site:
             )
         if doc["updated"]:
             meta_bits.append(f'updated {human_date(doc["updated"])}')
-        meta_bits.append(f'{doc["reading_time"]} min read')
+        if not doc.get("locked"):
+            meta_bits.append(f'{doc["reading_time"]} min read')
         meta_html = '<span class="dot">·</span>'.join(meta_bits)
 
         # Writeup-specific fact table.

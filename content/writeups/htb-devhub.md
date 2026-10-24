@@ -7,7 +7,7 @@ platform: HackTheBox
 os: Linux
 difficulty: Medium
 points: 845
-tags: [hackthebox, linux, medium, active, mcpjam, cve-2026-23744, ps, jupyter, api, chisel, pivoting]
+tags: [hackthebox, linux, medium, retired, mcpjam, cve-2026-23744, ps, jupyter, api, chisel, pivoting]
 description: Unauthenticated RCE in MCPJam Inspector, a Jupyter token leaked through /proc, a chisel pivot and a hardcoded API key that hands over root's SSH key.
 path:
   - MCPJam Inspector RCE (CVE-2026-23744)

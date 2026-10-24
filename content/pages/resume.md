@@ -6,7 +6,6 @@ pdf: static/Arman_Abrahamyan_Resume.pdf
 ---
 
 [armanabrahamyan8080@gmail.com](mailto:armanabrahamyan8080@gmail.com) ·
-[+374 41 224247](tel:+37441224247) ·
 [linkedin.com/in/armabrahamyan](https://www.linkedin.com/in/armabrahamyan/) ·
 [github.com/ArmanAbr](https://github.com/ArmanAbr) ·
 [armanabr.github.io](https://armanabr.github.io/)
@@ -14,7 +13,7 @@ pdf: static/Arman_Abrahamyan_Resume.pdf
 
 16-year-old offensive security student focused on Active Directory, web
 exploitation and privilege escalation. 2nd of 209 in the national student CTF
-prequalification, selected for Team Armenia at ECSC 2026, and 14 months as an
+prequalification, represented Armenia at ECSC 2026, and 14 months as an
 offensive security intern at Hexens. Looking for penetration testing
 internships and junior roles.
 
@@ -83,7 +82,7 @@ drone radar (C++)
 ## Certifications & practice
 
 - **Ethical Hacker** - Cisco Networking Academy, Sep 2026
-- **In progress:** HTB CDSA, then HTB CPTS
+- **In progress:** HTB CPTS
 - **HackTheBox:** Hacker rank · 30+ machines · 120+ challenges · level 60+
 
 ## Skills

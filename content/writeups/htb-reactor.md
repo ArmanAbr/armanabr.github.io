@@ -7,7 +7,7 @@ platform: HackTheBox
 os: Linux
 difficulty: Easy
 points: 585
-tags: [hackthebox, linux, easy, active, cve-2025-55182, reverse-shell, node.js, sqlite3]
+tags: [hackthebox, linux, easy, retired, cve-2025-55182, reverse-shell, node.js, sqlite3]
 description: Unauthenticated RCE in a Next.js app (CVE-2025-55182), cracked SQLite hashes for SSH, then a root Node.js process with the inspector enabled.
 path:
   - Next.js React Server Components RCE (CVE-2025-55182)
