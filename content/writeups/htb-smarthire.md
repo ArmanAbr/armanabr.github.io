@@ -7,7 +7,7 @@ platform: HackTheBox
 os: Linux
 difficulty: Medium
 points: 845
-tags: [hackthebox, linux, medium, active, mlflow, pickle, deserialization, python-pth]
+tags: [hackthebox, linux, medium, retired, mlflow, pickle, deserialization, python-pth]
 description: MLflow on default credentials serves a pickled model the app trusts: poison it for a shell, then plant a .pth file for root.
 path:
   - MLflow default credentials
