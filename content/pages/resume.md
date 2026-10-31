@@ -30,6 +30,27 @@ internships and junior roles.
 
 ### Students National Cyber Challenge 2026, Final (team) *Nov 14, 2026*
 
+## Experience
+
+### Offensive Security Intern - Hexens *2024 - 2025 · Yerevan*
+
+- Web application security: OWASP Top 10 and the PortSwigger Web Security
+  Academy; exploited SQL injection, XSS, LFI/RFI, CSRF, SSRF and IDOR by hand
+  in Burp Suite.
+- Active Directory: LDAP enumeration, BloodHound, credential abuse, lateral
+  movement, token impersonation and ACL abuse.
+- Infrastructure: enumeration and privilege escalation on Linux and Windows
+  hosts; traffic analysis in Wireshark and tcpdump.
+- Scripting: Python, Bash and PowerShell tooling to automate enumeration and
+  parse scan output.
+
+### Software Engineering Intern - Database and Statistics Technology *2022 - 2023 · Remote*
+
+- Built internal business tools in VB.NET / .NET Framework.
+- Designed MySQL schemas and wrote reporting and analytics queries.
+- Tested and debugged REST endpoints in Postman; took part in code review and
+  sprint planning.
+
 ## Projects
 
 ### [AD-Path-Finder](https://github.com/ArmanAbr/AD-Path-Finder) *Python*
@@ -57,27 +78,6 @@ internships and junior roles.
 **Also:** [armanabr.github.io](https://armanabr.github.io/) (writeups site on a Python
 static site generator I wrote) · AD-Enum-Toolkit · Pentest-Automation · ESP32-S3
 drone radar (C++)
-
-## Experience
-
-### Offensive Security Intern - Hexens *Jul 2024 - Aug 2025 · Yerevan*
-
-- Web application security: OWASP Top 10 and the PortSwigger Web Security
-  Academy; exploited SQL injection, XSS, LFI/RFI, CSRF, SSRF and IDOR by hand
-  in Burp Suite.
-- Active Directory: LDAP enumeration, BloodHound, credential abuse, lateral
-  movement, token impersonation and ACL abuse.
-- Infrastructure: enumeration and privilege escalation on Linux and Windows
-  hosts; traffic analysis in Wireshark and tcpdump.
-- Scripting: Python, Bash and PowerShell tooling to automate enumeration and
-  parse scan output.
-
-### Software Engineering Intern - Database and Statistics Technology *Jun 2023 - May 2024 · Remote*
-
-- Built internal business tools in VB.NET / .NET Framework.
-- Designed MySQL schemas and wrote reporting and analytics queries.
-- Tested and debugged REST endpoints in Postman; took part in code review and
-  sprint planning.
 
 ## Certifications & practice
 
