@@ -83,7 +83,7 @@ drone radar (C++)
 
 - **Ethical Hacker** - Cisco Networking Academy, Sep 2026
 - **In progress:** HTB CPTS
-- **HackTheBox:** Hacker rank · 30+ machines · 120+ challenges · level 60+
+- **HackTheBox:** Pro Hacker rank · 40+ machines · 130+ challenges · level 65+ (Master)
 
 ## Skills
 
