@@ -11,11 +11,10 @@ pdf: static/Arman_Abrahamyan_Resume.pdf
 [armanabr.github.io](https://armanabr.github.io/)
 {: .resume-contact }
 
-16-year-old offensive security student focused on Active Directory, web
-exploitation and privilege escalation. 2nd of 209 in the national student CTF
-prequalification, represented Armenia at ECSC 2026, and 14 months as an
-offensive security intern at Hexens. Looking for penetration testing
-internships and junior roles.
+Offensive security student focused on Active Directory, web exploitation and
+privilege escalation. 2nd of 209 in Armenia's national student CTF, Team Armenia
+at ECSC 2026, 14 months as an offensive security intern at Hexens, and 30+
+public writeups. Looking for penetration testing internships and junior roles.
 
 ## Competitions
 
@@ -25,24 +24,21 @@ internships and junior roles.
   categories in one 13-hour session, human-only (no AI assistants or automation).
 - Solved all 10 (Web, Reversing, Pwn, Forensics, AI/ML, Crypto, OSINT) for
   6,575 points and 3 first bloods.
+- Qualified for the national team final, Nov 14, 2026.
 
 ### Team Armenia - European Cybersecurity Challenge (ECSC) 2026, Bochum *Oct 12-16, 2026*
-
-### Students National Cyber Challenge 2026, Final (team) *Nov 14, 2026*
 
 ## Experience
 
 ### Offensive Security Intern - Hexens *2024 - 2025 · Yerevan*
 
-- Web application security: OWASP Top 10 and the PortSwigger Web Security
-  Academy; exploited SQL injection, XSS, LFI/RFI, CSRF, SSRF and IDOR by hand
-  in Burp Suite.
-- Active Directory: LDAP enumeration, BloodHound, credential abuse, lateral
-  movement, token impersonation and ACL abuse.
-- Infrastructure: enumeration and privilege escalation on Linux and Windows
-  hosts; traffic analysis in Wireshark and tcpdump.
-- Scripting: Python, Bash and PowerShell tooling to automate enumeration and
-  parse scan output.
+- Exploited SQLi, XSS, LFI/RFI, CSRF, SSRF and IDOR by hand in Burp Suite
+  across the full PortSwigger Web Security Academy path.
+- Mapped and abused Active Directory attack paths: LDAP and BloodHound
+  enumeration, credential abuse, lateral movement, token impersonation and ACL
+  abuse.
+- Escalated privileges on Linux and Windows hosts; wrote Python, Bash and
+  PowerShell tooling to automate enumeration and parse scan output.
 
 ### Software Engineering Intern - Database and Statistics Technology *2022 - 2023 · Remote*
 
@@ -70,8 +66,8 @@ internships and junior roles.
 
 ### [Sentinel](https://github.com/ArmanAbr/Sentinel) *Python*
 
-- Offline GTFOBins/HackTricks rule engine that ranks ready-to-run privilege
-  escalation vectors, with an optional LLM layer that re-prioritises and chains them.
+- Offline GTFOBins/HackTricks rule engine that ranks ready-to-run privesc
+  vectors; an optional LLM layer re-prioritises and chains them.
 - autopwn chains nmap, feroxbuster, nikto, enum4linux-ng and searchsploit into a
   foothold report; read-only by default, authorization-gated, 18 offline tests.
 
