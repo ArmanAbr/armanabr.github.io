@@ -28,8 +28,6 @@ internships and junior roles.
 
 ### Team Armenia - European Cybersecurity Challenge (ECSC) 2026, Bochum *Oct 12-16, 2026*
 
-### Students National Cyber Challenge 2026, Final (team) *Nov 14, 2026*
-
 ## Experience
 
 ### Offensive Security Intern - Hexens *2024 - 2025 · Yerevan*
